@@ -45,21 +45,35 @@ while not entryLoopCompleted:
 while keepGoingFlag:
 
 	if getDataBuffered():
-		#proceed to read out data into arrays
-		newData = readInData()
-
-		#perform on the fly processing for the arrays
-		processedData = onTheFlyProcessing(newData)
-
-		#send processed data to array that is wating to be written out from
-		processedDataToWrite.append(processedData)
+		#call method that does main acquisition.  the array processedDataToWrite will have an element attached to it that represents the acquired data post-fly-processing
+		processedDataToWrite = dataAcquisitionBranch(processedDataToWrite)
 	else:
 		#write out any data in variable arrays that are awaiting to be written out.
 		#the array 'processedDataToWrite' is returned as an empty array that can be re-filled.  It serves as a temporary variable buffer between data acquisitions and data write-outs.
 		processedDataToWrite = writeOut(fileNameNowFull, processedDataToWrite)
 
 		#update internal variables with written out data for plotting purposes
-		#check if data is now buffered
+
+		#see if there is data in the buffer now.  if there is, go ahead and acquire it.
+		if getDataBuffered():
+			#there is buffered data, need to go acquire it from the data buffer
+			processedDataToWrite = dataAcquisitionBranch(processedDataToWrite)
+		else:
+			pass
 
 
 print("end of loop reached")
+
+
+#this is a method that compiles all methods in the main data acquisition branch of the loop.  the processed data 'buffer' array is passed in and returned out as well.  this 'buffer' exists to store values that have been acquired but not yet written out.
+def dataAcquisitionBranch(processedDataToWriteArray):
+	#proceed to read out data into arrays
+	newData = readInData()
+
+	#perform on the fly processing for the arrays
+	processedData = onTheFlyProcessing(newData)
+
+	#send processed data to array that is wating to be written out from
+	processedDataToWriteArray.append(processedData)
+
+	return processedDataToWriteArray

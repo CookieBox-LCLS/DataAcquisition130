@@ -34,6 +34,8 @@ def writeOutProcessedData(fileNameNowFull, processedDataToWrite):
 		#for each element in the list, remove the first element and write it out
 		toWrite = processedDataToWrite.pop(0)
 		toWrite.tofile(file, "")
+
+		#process the data that is to be written, and acquire new updates to variables needed for GUI
 	file.close()
 
 	return processedDataToWrite
