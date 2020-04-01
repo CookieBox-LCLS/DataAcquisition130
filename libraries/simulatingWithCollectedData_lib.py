@@ -3,16 +3,18 @@ import glob
 import lecroyparser
 import numpy
 import sys
+from CFD_lib import andreiKamalovCFD_main as CFD
 
+###########################################
 def dataBufferRandomSimulation():
 	return random.getrandbits(1)
 
 
+###########################################
 dataFolderDirectory = 'C:\\Andrei\\dataTransfer\\03_16_2020_CX60_6013E-S+'
 globPathname = dataFolderDirectory+'\\*.trc'
 fileArray = glob.glob(globPathname)
 fileArrayIndex = 0
-
 def readInDataFromFolder():
 	global fileArrayIndex
 	fileNameNow = fileArray[fileArrayIndex]
@@ -20,11 +22,21 @@ def readInDataFromFolder():
 	fileArrayIndex += 1
 	return dataNow.y
 
+
+###########################################
+#methods for on the fly processiong
+##########################################
 #method 'performNoProcessing' is designed as a stand in.  it does not actually do any processing, but rather returns the data provided immediately.
 def performNoProcessing(dataIn):
 	return dataIn
 
+#method 'returnWaveformAndHits' takes the raw dataIn and returns the waveform and CFD-based histogram of the data
+def returnWaveformAndHits(dataIn):
+	#binary .trc files provide the raw waveform as the dataIn
+	hitsHistogram = CFD(dataIn)
+	return dataIn, hitsHistogram
 
+###########################################
 #the method 'writeOutProcessedData' takes the temporary data buffer in the program, and writes it out to the file in fileNameNowFull
 def writeOutProcessedData(fileNameNowFull, processedDataToWrite):
 	#open the file to which post-on-the-fly-processed data is written.
@@ -40,7 +52,7 @@ def writeOutProcessedData(fileNameNowFull, processedDataToWrite):
 
 	return processedDataToWrite
 
-
+###########################################
 #method 'generateNewFileAndHeader' is designed to look at a sampling of data and get it's binary data size, and output it to the file's associated header.txt file.  It then creates the actual data file and saves the first bit of sampled data to it, so as to not waste it.
 def generateNewFileAndHeader(fileNameNow, processedDataToWrite):
 	####figure out the header file first
@@ -65,3 +77,4 @@ def generateNewFileAndHeader(fileNameNow, processedDataToWrite):
 
 	#the empty array is returned so that the loop that called this function knows that there is nothing else to read out of the array.
 	return processedDataToWrite
+

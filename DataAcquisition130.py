@@ -8,17 +8,37 @@ import sys
 sys.path.append("C:/Users/andre/Documents/GitHub/DataAcquisition130/libraries")
 import numpy
 import datetime
+import matplotlib.pyplot as pyplt
+from plottingAndGUI_lib import *
 #import commands from libraries.
 #commands should be renamed as what they will be used as in the main executiong script
 from simulatingWithCollectedData_lib import dataBufferRandomSimulation as getDataBuffered
 from simulatingWithCollectedData_lib import readInDataFromFolder as readInData
-from simulatingWithCollectedData_lib import performNoProcessing as onTheFlyProcessing
+from simulatingWithCollectedData_lib import returnWaveformAndHits as onTheFlyProcessing
 from simulatingWithCollectedData_lib import writeOutProcessedData as writeOut
 from simulatingWithCollectedData_lib import generateNewFileAndHeader as generateNewFileAndHeader
 #setup variables
 keepGoingFlag = True
 numChannels = 1 #currently, support for only one channel at a time is implemented
 saveToDirectory = "C:\\Users\\andre\\Desktop\\DataWriteOut\\"#written out data to be saved to this folder
+
+
+
+#this is a method that compiles all methods in the main data acquisition branch of the loop.  the processed data 'buffer' array is passed in and returned out as well.  this 'buffer' exists to store values that have been acquired but not yet written out.
+def dataAcquisitionBranch(processedDataToWriteArray):
+	#proceed to read out data into arrays
+	newData = readInData()
+
+	#perform on the fly processing for the arrays
+	processedData = onTheFlyProcessing(newData)
+
+	#send processed data to array that is wating to be written out from
+	processedDataToWriteArray.append(processedData)
+
+	return processedDataToWriteArray
+
+
+
 
 
 #run program
@@ -34,11 +54,15 @@ while not entryLoopCompleted:
 		#read in sacrificial first data into an array.
 		sampleData = readInData()
 		#apply processing.  this is done to see what the processed data looks like
-		processedData = onTheFlyProcessing(sampleData)
+		processedData, histogram = onTheFlyProcessing(sampleData)
 		processedDataToWrite.append(processedData)
 		#take the sample data
 		processedDataToWrite = generateNewFileAndHeader(fileNameNowFull, processedDataToWrite)
+		#initialize plotting tools
+		masterFig, axes = initializeGUI()
+		#change flag to denote that initialization is complete
 		entryLoopCompleted = True
+
 
 
 #begin main loop
@@ -59,21 +83,14 @@ while keepGoingFlag:
 			#there is buffered data, need to go acquire it from the data buffer
 			processedDataToWrite = dataAcquisitionBranch(processedDataToWrite)
 		else:
+			#if GUI flags are raised
+			#execute GUI flags
+
+			#else
+			#updateThePlots
+			#updatePlotsMaster(masterFig, axes, )
+
 			pass
 
 
 print("end of loop reached")
-
-
-#this is a method that compiles all methods in the main data acquisition branch of the loop.  the processed data 'buffer' array is passed in and returned out as well.  this 'buffer' exists to store values that have been acquired but not yet written out.
-def dataAcquisitionBranch(processedDataToWriteArray):
-	#proceed to read out data into arrays
-	newData = readInData()
-
-	#perform on the fly processing for the arrays
-	processedData = onTheFlyProcessing(newData)
-
-	#send processed data to array that is wating to be written out from
-	processedDataToWriteArray.append(processedData)
-
-	return processedDataToWriteArray
