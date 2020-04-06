@@ -10,11 +10,20 @@ def ryanCoffeeCFD_main(dataIn_Amplitude):
     pass
 
 
+###########################################
+#Ave CFD section
+###########################################
+def aveGattonCFD_main(dataIn_Amplitude):
+    pass
+
 
 ##################################################
 #Andrei CFD section
 ##################################################
 def andreiKamalovCFD_main(dataIn_Amplitude):
+	#initialize 'hitIndices', which will contain the indices of any hits found in the trace supplied as 'dataIn_Amplitude'
+	hitIndices = []
+
 	#subtract a mean offset
 	dataIn_Amplitude -= np.mean(dataIn_Amplitude)
 	#calculate the variance of the trace
@@ -29,7 +38,7 @@ def andreiKamalovCFD_main(dataIn_Amplitude):
 	if(len(dataIn_AboveThreshold_Indices) == 0):
 		#create an empty array of found hits
 		#NOT IMPLEMENTED YET BUT SHOULD BE
-		return dataIn_Amplitude
+		return dataIn_Amplitude, hitIndices
 
 
 	#convolve the raw data with a triangular filter
@@ -38,47 +47,57 @@ def andreiKamalovCFD_main(dataIn_Amplitude):
 
 	#add up an inverse and an offset.  this is the type of approach an electronic CFD performs.
 	lengthTrace = len(convolvedData)
-	CFDOffset = 25
-	inverseMultiplier = -0.25
+	CFDOffset = 20
+	inverseMultiplier = -0.75
 	offsetTrace = convolvedData[0:(lengthTrace - CFDOffset)]
 	inverseTrace = inverseMultiplier * convolvedData[CFDOffset:lengthTrace]
 	#traditional CFD adds a time-offset copy of the trace with an inverser copy of original trace.
 	comparedTrace = offsetTrace + inverseTrace
-	#shift the region with zero-point crossing to be more centered on the zero cross
+	#shift the region with zero-point crossing to be more centered on the zero cross.  The initial array is found based on being above some amount of standard deviations
 	indicesShift = round(CFDOffset * (1 + inverseMultiplier))
 	dataIn_AboveThreshold_Indices -= indicesShift
 
-	#process the list of indices and break it up into individual arrays, each array representing a single continuous string of indices
-	currentList = []
-	tupleOfLists = ()
-	for ind in range(0, len(dataIn_AboveThreshold_Indices) - 1):
-		#add the current index to the current list
-		currentList = np.append(currentList, dataIn_AboveThreshold_Indices[ind])
+	#call a method which will take the array of indices, and separate that one array into a set of arrays, wherein each array is a continuous set of integers.
+	tupleOfRegionIndicesArrays = separateArrayIntoTupleOfContinuousArrays(dataIn_AboveThreshold_Indices)
 
-		#inspect whether the next element in the list of indices is the start of a new continuous set.  if it is, close out this list
-		if (dataIn_AboveThreshold_Indices[ind + 1] - dataIn_AboveThreshold_Indices[ind]) != 1:
-			#the next index is a the start of a new continuous set
-			breakpoint()
-			tupleOfLists += (currentList,)
-			currentList = []
-	#process the final index in the array, and close out the current list since the list of indices is complete
-	currentList += dataIn_AboveThreshold_Indices[-1]
-	tupleOfLists += (currentList,)
-	breakpoint()
+	#findZeroCrossings for each array of continuous integers
+	for ind in range(len(tupleOfRegionIndicesArrays)):
+		seriesToProcess = tupleOfRegionIndicesArrays[ind]
+		#method 'findZeroCrossings' inspects a series to validate it.  if it's a good zero-crossing, it returns: True, indexOfCrossing.  if it's a bad series, the return is 'False, 0'
+		validSeriesFlag, hitIndex = findZeroCrossings(seriesToProcess, comparedTrace)
+		#append good hits to the array 'hitIndices'
+		if(validSeriesFlag):
+			hitIndices.append(hitIndex)
+	#there are now a set of found hitIndices.  but these are in respect to the processed comparedTrace.  need to un-shift the indices to represent hits for the actual trace (dataIn_Amplitude)
+	hitIndices = [x + indicesShift for x in hitIndices]
 
-	#diagnostic plots
-	pyplt.plot(convolvedData[6250:6650])
-	pyplt.show()
-	pyplt.plot(offsetTrace[6250:6650])
-	pyplt.show()
-	pyplt.plot(inverseTrace[6250:6650])
-	pyplt.show()
-	pyplt.plot(comparedTrace[6250:6650])
-	pyplt.show()
-	pyplt.plot(comparedTrace[dataIn_AboveThreshold_Indices])
-	pyplt.show()
-	breakpoint()
-	pass
+	#control whether to do diagnostic plots or not
+	if(False):
+		halfSpan = 200
+		for ind in range(len(hitIndices)):
+			#diagnostic plots
+			lowBound = hitIndices[ind].item() - halfSpan
+			highBound = hitIndices[ind].item() + halfSpan
+			pyplt.plot(range(lowBound, highBound), convolvedData[lowBound:highBound])
+			if (len(hitIndices) > 0):
+				pyplt.scatter(hitIndices[ind].item(), convolvedData[hitIndices[ind].item()])
+			pyplt.show()
+
+			pyplt.plot(range(lowBound, highBound), dataIn_Amplitude[lowBound:highBound])
+			if (len(hitIndices) > 0):
+				pyplt.scatter(hitIndices[ind].item(), dataIn_Amplitude[hitIndices[ind].item()])
+			pyplt.show()
+
+
+	return dataIn_Amplitude, hitIndices
+
+
+
+
+
+#####################################################################################
+#support methods for andrei's CFD
+
 
 #convolute the array 'signalIn' by a triangular waveform, with true width (binWidth + 2).  the two extra bits are for the 'zero' value of the triangles convolution.  the max height occurs at the central bin.  think of the convolution filter as a sawtooth.
 def convoluteByTriangle(signalIn, binWidth):
@@ -108,3 +127,63 @@ def convoluteByTriangle(signalIn, binWidth):
 
 	#return the subset of the convolved data that represents the correct data length
 	return convolvedData[offsets:(lengthData + offsets)]
+
+
+#this method is designed to take an array of integers, some of which are continuous, and separate it into a set of arrays wherein each array is a continuous set of integers.  these individual arrays are placed into a tuple that is then returned.
+def separateArrayIntoTupleOfContinuousArrays(dataIn_AboveThreshold_Indices):
+	#setup the 'first' currentList and the tuple that will be populated
+	currentList = []
+	tupleOfLists = ()
+
+	#handle the odd case that there is exactly 1 index found.  This is a rarity, but it needs to be handled to avoid error
+	if len(dataIn_AboveThreshold_Indices) == 1:
+		currentList += dataIn_AboveThreshold_Indices[0]
+		tupleOfLists += (currentList,)
+	#the cases which matter are the ones that have more than one element, and are handled in the else statement
+	else:
+		for ind in range(0, len(dataIn_AboveThreshold_Indices) - 1):
+			#add the current index to the current list
+			currentList.append(dataIn_AboveThreshold_Indices[ind])
+
+			#inspect whether the next element in the list of indices is the start of a new continuous set.  if it is, close out this list
+			if (dataIn_AboveThreshold_Indices[ind + 1] - dataIn_AboveThreshold_Indices[ind]) != 1:
+				#the next index is a the start of a new continuous set
+				tupleOfLists += (currentList,)
+				#clear the currentList, so that the next value considered will be the first value in a new array
+				currentList = []
+
+		#process the final index in the array, and close out the current list since the list of indices is complete
+		currentList.append(dataIn_AboveThreshold_Indices[-1])
+		tupleOfLists += (currentList,)
+
+	return tupleOfLists
+
+
+#method findZeroCrossings inspects the index series in seriesToProcess, and verifies that the associated y-values in comparedTrace are an appropriate rising edge.  if it's a good series, return true and the zero crossing index.  if false, return False and 0
+def findZeroCrossings(seriesToProcess, comparedTrace):
+	numIndices = len(seriesToProcess)
+	if numIndices <= 1:
+		#series of length 1 won't have a proper zero crossing and are therefore, not valid zero crossings
+		return False, 0
+	else:
+		#the ideal zero crossing series starts negative and trends positive.  it is good to filter series for validity by verifying this.
+		seriesLowest = seriesToProcess[0]
+		seriesHighest = seriesToProcess[-1]
+
+		#inspect where the series stops being negative
+		indLow = seriesLowest
+		while (comparedTrace[indLow] < 0) and (indLow <= seriesHighest):
+			indLow += 1
+
+		#inspect where the series stops being positive if coming in from the positive side
+		indHigh = seriesHighest
+		while (comparedTrace[indHigh] > 0) and (indHigh >= seriesLowest):
+			indHigh -= 1
+
+		#if indLow and indHigh are adjacent to each other, then the series passed in was a monotonically positive zero-crossing.
+		if ((indHigh + 1) == indLow): #the way the while loops are broken out of, it's a valid series if indLow is one value higher than indHigh
+			#return true, and the index of the first positive value after the crossing.
+			return True, indHigh
+		else:
+			#this was not a valid series
+			return False, 0

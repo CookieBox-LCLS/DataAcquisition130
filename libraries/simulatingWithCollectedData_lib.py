@@ -33,34 +33,34 @@ def performNoProcessing(dataIn):
 #method 'returnWaveformAndHits' takes the raw dataIn and returns the waveform and CFD-based histogram of the data
 def returnWaveformAndHits(dataIn):
 	#binary .trc files provide the raw waveform as the dataIn
-	hitsHistogram = CFD(dataIn)
-	return dataIn, hitsHistogram
+	dataTrace, hitIndices = CFD(dataIn)
+	return dataIn, hitIndices
 
 ###########################################
-#the method 'writeOutProcessedData' takes the temporary data buffer in the program, and writes it out to the file in fileNameNowFull
-def writeOutProcessedData(fileNameNowFull, processedDataToWrite):
+#the method 'writeOutRawData' takes the temporary data buffer in the program, and writes it out to the file in fileNameNowFull
+def writeOutRawData(fileNameNowFull, rawDataToWrite):
 	#open the file to which post-on-the-fly-processed data is written.
 	file = open(str(fileNameNowFull), 'ab')
 	#the inbound list is a series associated with each readout trace
-	for i in range(len(processedDataToWrite)):
+	for i in range(len(rawDataToWrite)):
 		#for each element in the list, remove the first element and write it out
-		toWrite = processedDataToWrite.pop(0)
+		toWrite = rawDataToWrite.pop(0)
 		toWrite.tofile(file, "")
 
 		#process the data that is to be written, and acquire new updates to variables needed for GUI
 	file.close()
 
-	return processedDataToWrite
+	return rawDataToWrite
 
 ###########################################
 #method 'generateNewFileAndHeader' is designed to look at a sampling of data and get it's binary data size, and output it to the file's associated header.txt file.  It then creates the actual data file and saves the first bit of sampled data to it, so as to not waste it.
-def generateNewFileAndHeader(fileNameNow, processedDataToWrite):
+def generateNewFileAndHeader(fileNameNow, rawDataToWriteArray):
 	####figure out the header file first
 	fileNameHeader = fileNameNow + '_HEADER.txt'
 	#create and open the file that will be used to store processed data.
 	file = open(str(fileNameHeader), 'w')
 	#there should only be one entry here - use it to gauge length of write out, and create a header with that information.
-	toWrite = processedDataToWrite.pop(0)
+	toWrite = rawDataToWriteArray.pop(0)
 	#get binary size of data sample
 	binaryDataSize = sys.getsizeof(toWrite)
 	#output size of binary data
@@ -76,5 +76,5 @@ def generateNewFileAndHeader(fileNameNow, processedDataToWrite):
 	file.close()
 
 	#the empty array is returned so that the loop that called this function knows that there is nothing else to read out of the array.
-	return processedDataToWrite
+	return rawDataToWriteArray
 
