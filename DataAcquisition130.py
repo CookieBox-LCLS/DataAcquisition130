@@ -67,7 +67,7 @@ while not entryLoopCompleted:
 		#take the first sample data, and use it to generate a new file.  the generateNewFileAndHeader file is unique in that it also creates a header file that contains information regarding the size of an individual data chunk.
 		rawDataToWriteArray = generateNewFileAndHeader(fileNameNowFull, rawDataToWriteArray)
 		#initialize plotting tools
-		masterFig, axisHistogram, histogramHandle = initializeGUI(histogramCollected)
+		GUIHandle = initializeGUI(histogramCollected)
 		#change flag to denote that initialization is complete
 		entryLoopCompleted = True
 
@@ -96,7 +96,7 @@ while keepGoingFlag:
 
 			#else
 			#updateThePlots
-			updatePlotsMaster(masterFig, axisHistogram, histogramCollected, histogramHandle)
+			updatePlotsMaster(GUIHandle, histogramCollected)
 
 			pass
 
