@@ -24,9 +24,11 @@ def addHitsToHistogram(newHits, histogram):
 #########################################################
 
 #updatePlotsMaster is a function that update the plots individually.  this is done as a separate method to help prevent the main loop from getting too long to read on it's own, and to help keep the code well organized
-def updatePlotsMaster(GUIHandle, histogramToPlot):
+def updatePlotsMaster(GUIHandle, histogramToPlot, newTrace):
 	#update the histogram
 	GUIHandle.updateHistogram(histogramToPlot)
+	#update the trace that is on display with a new trace
+	GUIHandle.updateTrace(newTrace)
 
 	#allow plots to be updated
 	pyplt.pause(0.000001)
@@ -46,6 +48,7 @@ def initializeGUI(histogramSample):
 	GUIHandle = GUI_Class()
 	#pass in a sample histogram.  this is needed so that the initial plotting can be done.  Future plotting is made faster by changing out the data within the figure, but not re-creating the figure itself.
 	GUIHandle.plotInitHistogram(histogramSample)
+	GUIHandle.plotInitRawTrace(histogramSample)
 
 	return GUIHandle
 
@@ -60,14 +63,36 @@ class GUI_Class():
 	def plotInitHistogram(self, histogramSample):
 		self.histogramHandle, = self.axisHistogram.plot(histogramSample)
 
+	def plotInitRawTrace(self, histogramSample):
+		self.rawTraceHandle, = self.axisRawTrace.plot(histogramSample)
+		self.axisRawTrace.set_ylim(0, 0.1)
 
-
+	#update the histogram plot with new data that is provided
 	def updateHistogram(self, newHistogram):
 		self.histogramHandle.set_ydata(newHistogram)
 		yLimitHigh = np.amax(newHistogram) + 1
 		self.axisHistogram.set_ylim(0, yLimitHigh)
 
+	def updateTrace(self, newTrace):
+		self.rawTraceHandle.set_ydata(newTrace)
+
 	#initialization of GUI_Class object.
 	def __init__(self):
-		self.figHandle = pyplt.figure()
-		self.axisHistogram = self.figHandle.add_subplot(1, 1, 1)
+		#layout the axes within the figure.  controlled via these variables
+		#spacing variables
+		verticalSpacing = 0.05
+		horizontalSpacing = 0.05
+		#assign positions to the histogram plot
+		xMinHist = 0.05
+		widthHist = 0.7
+		yMinHist = 0.5
+		heightHist = 0.95 - yMinHist
+		#assign positions to the raw trace plot
+		xMinTrace = xMinHist
+		widthTrace = widthHist
+		yMinTrace = 0.1
+		heightTrace = yMinHist - yMinTrace - verticalSpacing
+
+		self.figHandle = pyplt.figure(figsize=(12,9))
+		self.axisHistogram = self.figHandle.add_axes([xMinHist, yMinHist, widthHist, heightHist])
+		self.axisRawTrace = self.figHandle.add_axes([xMinTrace, yMinTrace, widthTrace, heightTrace])

@@ -39,7 +39,7 @@ def dataAcquisitionBranch(rawDataToWriteArray):
 	#send processed data to array that is wating to be written out from
 	rawDataToWriteArray.append(rawData)
 
-	return rawDataToWriteArray
+	return rawDataToWriteArray, newData
 
 
 #run program
@@ -68,6 +68,9 @@ while not entryLoopCompleted:
 		rawDataToWriteArray = generateNewFileAndHeader(fileNameNowFull, rawDataToWriteArray)
 		#initialize plotting tools
 		GUIHandle = initializeGUI(histogramCollected)
+		#lastTrace is needed for plotting the raw trace.  in case the plot is done before any new data is acquired, it's good to have the variable initialized
+		lastTrace = newData
+
 		#change flag to denote that initialization is complete
 		entryLoopCompleted = True
 
@@ -78,7 +81,7 @@ while keepGoingFlag:
 
 	if getDataBuffered():
 		#call method that does main acquisition.  the array rawDataToWriteArray will have an element attached to it that represents the acquired data post-fly-processing
-		rawDataToWriteArray = dataAcquisitionBranch(rawDataToWriteArray)
+		rawDataToWriteArray, lastTrace = dataAcquisitionBranch(rawDataToWriteArray)
 	else:
 		#write out any data in variable arrays that are awaiting to be written out.
 		#the array 'rawDataToWriteArray' is returned as an empty array that can be re-filled.  It serves as a temporary variable buffer between data acquisitions and data write-outs.
@@ -89,14 +92,14 @@ while keepGoingFlag:
 		#see if there is data in the buffer now.  if there is, go ahead and acquire it.
 		if getDataBuffered():
 			#there is buffered data, need to go acquire it from the data buffer
-			rawDataToWriteArray = dataAcquisitionBranch(rawDataToWriteArray)
+			rawDataToWriteArray, lastTrace = dataAcquisitionBranch(rawDataToWriteArray)
 		else:
 			#if GUI flags are raised
 			#execute GUI flags
 
 			#else
 			#updateThePlots
-			updatePlotsMaster(GUIHandle, histogramCollected)
+			updatePlotsMaster(GUIHandle, histogramCollected, lastTrace)
 
 			pass
 
