@@ -1,5 +1,8 @@
 import matplotlib.pyplot as pyplt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np	
+import tkinter as tk
+import time
 
 #initialize histogram is used to create an array for the collected histogram.  at initialization, it is an array of zero's, the same size as a raw data trace
 def initializeHistogram(rawData):
@@ -25,14 +28,18 @@ def addHitsToHistogram(newHits, histogram):
 
 #updatePlotsMaster is a function that update the plots individually.  this is done as a separate method to help prevent the main loop from getting too long to read on it's own, and to help keep the code well organized
 def updatePlotsMaster(GUIHandle, histogramToPlot, newTrace):
+	global canvasHandle
+	global tkRootSupplied
 	#update the histogram
 	GUIHandle.updateHistogram(histogramToPlot)
 	#update the trace that is on display with a new trace
-	GUIHandle.updateTrace(newTrace)
+	#GUIHandle.updateTrace(newTrace)
 
 	#allow plots to be updated
-	pyplt.pause(0.000001)
-	pyplt.show()
+	#canvasHandle.pause(0.000001)
+	canvasHandle.draw()
+	tkRootSupplied.update()
+	#GUIHandle.figHandle.pause(0.00001)
 
 	return
 
@@ -40,17 +47,34 @@ def updatePlotsMaster(GUIHandle, histogramToPlot, newTrace):
 
 
 #initializeGUI is here to produce the figure and axes on which plots will be handled witht he GUI
-def initializeGUI(histogramSample):
+def initializeGUI(tkRoot, histogramSample):
+	global canvasHandle
+	global tkRootSupplied
+	tkRootSupplied = tkRoot
+
+	frame = tk.Frame(tkRoot)
+	button_left = tk.Button(frame,text="test button", command=buttonTestPressed)
+	button_left.pack(side="left")
 	#enable interactive mode.  this is needed to make the plot figure more dynamic
 	pyplt.ion()
 
 	#create the GUI class object.  the GUI figure is handled as a class to more cleanly wrap up the methods and variables needed to run the GUI.
 	GUIHandle = GUI_Class()
+	canvasHandle = FigureCanvasTkAgg(GUIHandle.figHandle, master=tkRoot)
+	canvasHandle.get_tk_widget().pack(side='top', fill='both', expand=1)
+	#canvasHandle.draw()
+
 	#pass in a sample histogram.  this is needed so that the initial plotting can be done.  Future plotting is made faster by changing out the data within the figure, but not re-creating the figure itself.
 	GUIHandle.plotInitHistogram(histogramSample)
 	GUIHandle.plotInitRawTrace(histogramSample)
 
+	frame.pack()
+
 	return GUIHandle
+
+
+def buttonTestPressed():
+	print("button was pressed!!")
 
 
 
@@ -96,3 +120,20 @@ class GUI_Class():
 		self.figHandle = pyplt.figure(figsize=(12,9))
 		self.axisHistogram = self.figHandle.add_axes([xMinHist, yMinHist, widthHist, heightHist])
 		self.axisRawTrace = self.figHandle.add_axes([xMinTrace, yMinTrace, widthTrace, heightTrace])
+
+
+
+
+
+
+
+
+
+
+
+########
+#tkinter experimentation
+
+def initTkinter():
+	window = tk.Tk()
+	return window
