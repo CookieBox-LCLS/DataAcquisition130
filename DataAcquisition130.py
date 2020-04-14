@@ -3,23 +3,28 @@
 ##########
 #DataAcquisition130.py is designed to be the master script for data acquisition performed in 130.
 
+#select the folder to which data will be written out
+saveToDirectory = "C:\\Users\\andre\\Desktop\\DataWriteOut\\"
+#write out the folder from which the libraries can be found
+sys.path.append("C:/Users/andre/Documents/GitHub/DataAcquisition130/libraries")
+
 #import needed libraries
 import sys
-sys.path.append("C:/Users/andre/Documents/GitHub/DataAcquisition130/libraries")
 import numpy as np
 import tkinter as tk
 import datetime
 from plottingAndGUI_lib import *
 #import commands from libraries.
 #commands should be renamed as what they will be used as in the main executiong script
-from simulatingWithCollectedData_lib import dataBufferRandomSimulation as getDataBuffered
-from simulatingWithCollectedData_lib import readInDataFromFolder as readInData
-from simulatingWithCollectedData_lib import returnWaveformAndHits as onTheFlyProcessing
-from simulatingWithCollectedData_lib import writeOutRawData as writeOut
-from simulatingWithCollectedData_lib import generateNewFileAndHeader as generateNewFileAndHeader
+from lecroyLiveAcquisition_lib import checkDataReadiness as getDataBuffered
+from lecroyLiveAcquisition_lib import readInDataFromScope_c1 as readInData
+#from simulatingWithCollectedData_lib import dataBufferRandomSimulation as getDataBuffered
+#from simulatingWithCollectedData_lib import readInDataFromFolder as readInData
+from generalPurposeProcessing_lib import returnWaveformAndHits as onTheFlyProcessing
+from generalPurposeProcessing_lib import writeOutRawData as writeOut
+from generalPurposeProcessing_lib import generateNewFileAndHeader as generateNewFileAndHeader
 #setup variables
 #numChannels = 1 #currently, support for only one channel at a time is implemented
-saveToDirectory = "C:\\Users\\andre\\Desktop\\DataWriteOut\\"#written out data to be saved to this folder
 
 
 class MainScriptManager_TK(tk.Tk):
