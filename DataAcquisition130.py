@@ -3,23 +3,23 @@
 ##########
 #DataAcquisition130.py is designed to be the master script for data acquisition performed in 130.
 
+import sys
 #select the folder to which data will be written out
-saveToDirectory = "C:\\Users\\andre\\Desktop\\DataWriteOut\\"
+saveToDirectory = "C:\\Andrei\\dataWriteOut\\"
 #write out the folder from which the libraries can be found
-sys.path.append("C:/Users/andre/Documents/GitHub/DataAcquisition130/libraries")
+sys.path.append("C:/Users/Kevin/Documents/GitHub/DataAcquisition130/libraries")
 
 #import needed libraries
-import sys
 import numpy as np
 import tkinter as tk
 import datetime
 from plottingAndGUI_lib import *
 #import commands from libraries.
 #commands should be renamed as what they will be used as in the main executiong script
-from lecroyLiveAcquisition_lib import checkDataReadiness as getDataBuffered
-from lecroyLiveAcquisition_lib import readInDataFromScope_c1 as readInData
-#from simulatingWithCollectedData_lib import dataBufferRandomSimulation as getDataBuffered
-#from simulatingWithCollectedData_lib import readInDataFromFolder as readInData
+#from lecroyLiveAcquisition_lib import checkDataReadiness as getDataBuffered
+#from lecroyLiveAcquisition_lib import readInDataFromScope_c1 as readInData
+from simulatingWithCollectedData_lib import dataBufferRandomSimulation as getDataBuffered
+from simulatingWithCollectedData_lib import readInDataFromFolder as readInData
 from generalPurposeProcessing_lib import returnWaveformAndHits as onTheFlyProcessing
 from generalPurposeProcessing_lib import writeOutRawData as writeOut
 from generalPurposeProcessing_lib import generateNewFileAndHeader as generateNewFileAndHeader
@@ -43,8 +43,9 @@ class MainScriptManager_TK(tk.Tk):
 		#send processed data to array that is wating to be written out from
 		self.rawDataToWriteArray.append(rawData)
 
-		#newdata is saved as the last trace observed
+		#newdata is saved as the last trace observed, and the respective hit indices
 		self.lastTrace = newData
+		self.lastHitIndices = hitIndices
 
 
 	def runMainLoop(self):
@@ -66,7 +67,7 @@ class MainScriptManager_TK(tk.Tk):
 					self.dataAcquisitionBranch()
 				else:
 					#command the GUI object to update the plots with new values
-					self.GUIHandle.updatePlotsMaster(self.histogramCollected, self.lastTrace)
+					self.GUIHandle.updatePlotsMaster(self.histogramCollected, self.lastTrace, self.lastHitIndices)
 
 					pass
 
@@ -104,6 +105,8 @@ class MainScriptManager_TK(tk.Tk):
 				self.GUIHandle = DataAcqGUI(self)
 				#lastTrace is needed for plotting the raw trace.  in case the plot is done before any new data is acquired, it's good to have the variable initialized
 				self.lastTrace = newRawData
+				#save the latest hit indices for the next trace plot
+				self.lastHitIndices = hitIndices
 
 				#change flag to denote that initialization is complete
 				entryLoopCompleted = True
@@ -124,8 +127,7 @@ dataProcessor.postConstructionClassInitialization()
 
 dataProcessor.after(1, dataProcessor.runMainLoop())
 # #pretty sure mainloop actually never gets called.  it seems once the after method is initiated, the thing works well enough as a gui
-#breakpoint()
-#dataProcessor.mainloop()
+dataProcessor.mainloop()
 
 
 print("the end of the program has been reached")

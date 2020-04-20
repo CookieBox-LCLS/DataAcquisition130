@@ -8,7 +8,7 @@ def dataBufferRandomSimulation():
 
 
 ###########################################
-dataFolderDirectory = 'C:\\Andrei\\dataTransfer\\03_16_2020_CX60_6013E-S+'
+dataFolderDirectory = 'C:\\Andrei\\fileTransfer\\03162020\\03_16_2020_CX60_6013E-S+'
 globPathname = dataFolderDirectory+'\\*.trc'
 fileArray = glob.glob(globPathname)
 fileArrayIndex = 0
