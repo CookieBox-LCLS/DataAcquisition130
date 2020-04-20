@@ -32,6 +32,11 @@ class DataAcqGUI:
 	#use plotInitHistogram to initialize the histogram plot.  this is done only at startup.  future histograms are plotted by changing the data of the plotted trace, which is created once with this method.
 	def plotInitHistogram(self, histogramSample):
 		self.histogramHandle, = self.axisHistogram.plot(histogramSample)
+		
+		#store the trace length as maximum width of a bin possible.  In the 'updateHistogram' method, the raw histogram distribution will be rebinned into bins of user-set width.  that width cannot exceed the length of the trace.  also initialize the current bin width of the histogram.
+		self.maxHistoBinWidthPossible = len(histogramSample)
+		#initialize the current histogram bin width of the run.  1 by default.
+		self.currentHistoBinWidth = 1
 
 	def plotInitRawTrace(self, histogramSample):
 		#initialize the raw trace
@@ -63,9 +68,36 @@ class DataAcqGUI:
 
 	#update the histogram plot with new data that is provided
 	def updateHistogram(self, newHistogram):
-		self.histogramHandle.set_ydata(newHistogram)
-		yLimitHigh = np.amax(newHistogram) + 1
+		#rearrange the histogram to be plotted into the bin width specified by the user.  but only do it if bin width exceeds the default value of 1, to avoid unnecessary processing.
+		if(self.currentHistoBinWidth != 1):
+			#call method that rearranges a raw histogram into a binned histogram
+			traceToPlot = self.calculateBinnedHistogramTrace(newHistogram, self.currentHistoBinWidth)
+		else:
+			traceToPlot = newHistogram
+
+		self.histogramHandle.set_ydata(traceToPlot)
+		#auto re-scale the y-axis to best show the histogram
+		yLimitHigh = np.amax(traceToPlot) + 1
 		self.axisHistogram.set_ylim(0, yLimitHigh)
+
+	#bin a raw histogram into the bin width specified by the user.  return a plot line's y-values to resemble histogram blocks, but be of the same length as the input variable 'rawHistogram'
+	def calculateBinnedHistogramTrace(self, rawHistogram, binWidth):
+		lenFullTrace = len(rawHistogram)
+		#calculate the number of complete bins that rawHistogram can be binned into, for given binWidth
+		numberCompleteBins = int(np.floor(lenFullTrace/binWidth))
+		#reshape as much of the rawHistogram trace as possible
+		lengthToBeReshaped = numberCompleteBins*binWidth
+		reshapedTraceArray = np.reshape(rawHistogram[0:lengthToBeReshaped], [numberCompleteBins, binWidth])
+		#use the reshaped trace to simplify calculation of bins.  sum up along axis 1 to sum across the bin width dimension.  in other words, sum up the components of a single bin with width binWidth.
+		sumsOfBins = np.sum(reshapedTraceArray, 1)
+
+		#using the binnedTrace, and the unutilized tail end of rawHistogram, stich together an array of the same dimension as rawHistogram, but with values that represent binned data.
+		binnedPortionOfTrace = np.repeat(sumsOfBins, binWidth)#account for the binned portion of the trace.
+		#stitch on any part of the trace not used in the binning
+		unusedTraceTail = rawHistogram[lengthToBeReshaped:lenFullTrace]
+		binnedTrace = np.concatenate((binnedPortionOfTrace, unusedTraceTail))#need argument of method to be a tuple of the two arrays to be stitched together.
+
+		return binnedTrace
 
 	#update the raw trace plot with latest trace provided by the execution loop
 	def updateTrace(self, newTrace, traceHitIndices):
@@ -130,6 +162,13 @@ class DataAcqGUI:
 		self.entryXHigh.grid(row=9, column=1)
 		self.entryXHigh.bind('<Return>', self.entryChanged_XHighLimit)
 
+		#build the label and entry field for the bin width to use on the histogram display
+		self.labelHistoBinWidth = tk.Label(self.scriptManager_TK_Handle, text = "bin width for histogram display: ")
+		self.labelHistoBinWidth.grid(row=8, column=8, columnspan=6, sticky="E")
+		self.entryHistoBinWidth = tk.Entry(self.scriptManager_TK_Handle)
+		self.entryHistoBinWidth.grid(row=8, column=14, columnspan=1)
+		self.entryHistoBinWidth.bind('<Return>', self.entryChanged_HistoBinWidth)
+
 	#command that is executed when the entry field for the lower x limit is updated.
 	#I don't understand tkinter and entries particularly well, but the <Return> binding for entries will call the associated method and pass the key press event.  The call errors if keyPressEvent is not passed in; this method is written to receive the keyPressEvent, but does not do anything with it.
 	def entryChanged_XLowLimit(self, keyPressEvent):
@@ -169,6 +208,30 @@ class DataAcqGUI:
 
 			#call command to update the xlimits for the plots.  Values do not need to be parsed with the command, the command will be able to access internal variables and submit the current low X and high X.
 			self.updateAxisXLimits()
+
+	#command that is executed when the entry field for histogram bin width is updated.
+	#see 'entryChanged_XLowLimit' comment explaining keyPressEvent.
+	def entryChanged_HistoBinWidth(self, keyPressEvent):
+		#retrieve the new value.  it will be returned as a string.
+		newRetrievedValue = self.entryHistoBinWidth.get()
+		#convert the retrieved value from string to int.  make sure user didn't insert a typo.
+		try:
+			newValue = int(newRetrievedValue)
+		except ValueError:
+			print("Histogram bin width entry is not an integer.")
+			return
+
+		#apply quality control on the submitted integer, make sure it's positive and not too large
+		if(newValue < 1):
+			print("the value submitted to the histogram bin width is not a positive integer.  it has not been applied.  please use positive integers that are smaller than the trace width only.")
+			return
+		elif(newValue > self.maxHistoBinWidthPossible):
+			print("the value submitted to the histogram bin width is too large.  it has not been applied.  the largest acceptable integer value is the length of the trace.")
+			return
+		else:
+			#the submitted value meets criteria.  apply it to be the new histogram bin width.
+			self.currentHistoBinWidth = newValue
+
 
 
 ######################################################
