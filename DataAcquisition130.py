@@ -1,13 +1,31 @@
 ##########
 #Description
 ##########
-#DataAcquisition130.py is designed to be the master script for data acquisition performed in 130.
+#DataAcquisition130.py is designed to be the master script for data acquisition performed in 130.  The code was tested on a set of individual .trc files offline from the oscilloscope.
 
+#set to True if code is running on LeCroy scope.  if proto-testing, set to False.
 import sys
-#select the folder to which data will be written out
-saveToDirectory = "C:\\Andrei\\dataWriteOut\\"
-#write out the folder from which the libraries can be found
-sys.path.append("C:/Users/Kevin/Documents/GitHub/DataAcquisition130/libraries")
+
+runningOnScope = False
+if(runningOnScope):
+	#select the folder to which data will be written out
+	saveToDirectory = ""
+	#write out the folder from which the libraries can be found
+	sys.path.append("")
+
+	#import libraries meant to acquire data on scope.  commands written to libraries need to be renamed to what they're called in the script.  this is to encourage cross-platform development
+	from lecroyLiveAcquisition_lib import checkDataReadiness as getDataBuffered
+	from lecroyLiveAcquisition_lib import readInDataFromScope_c1 as readInData
+else:
+	#select the folder to which data will be written out
+	saveToDirectory = "C:\\Andrei\\dataWriteOut\\"
+	#write out the folder from which the libraries can be found
+	sys.path.append("C:/Users/Kevin/Documents/GitHub/DataAcquisition130/libraries")
+
+	#import libraries meant to simulate data acquisition with pre-acquired .trc files.  commands written to libraries need to be renamed to what they're called in the script.  this is to encourage cross-platform development
+	from simulatingWithCollectedData_lib import dataBufferRandomSimulation as getDataBuffered
+	from simulatingWithCollectedData_lib import readInDataFromFolder as readInData
+
 
 #import needed libraries
 import numpy as np
@@ -15,16 +33,10 @@ import tkinter as tk
 import datetime
 from plottingAndGUI_lib import *
 #import commands from libraries.
-#commands should be renamed as what they will be used as in the main executiong script
-#from lecroyLiveAcquisition_lib import checkDataReadiness as getDataBuffered
-#from lecroyLiveAcquisition_lib import readInDataFromScope_c1 as readInData
-from simulatingWithCollectedData_lib import dataBufferRandomSimulation as getDataBuffered
-from simulatingWithCollectedData_lib import readInDataFromFolder as readInData
+#commands should be renamed as what they will be used as in the main execution script
 from generalPurposeProcessing_lib import returnWaveformAndHits as onTheFlyProcessing
 from generalPurposeProcessing_lib import writeOutRawData as writeOut
 from generalPurposeProcessing_lib import generateNewFileAndHeader as generateNewFileAndHeader
-#setup variables
-#numChannels = 1 #currently, support for only one channel at a time is implemented
 
 
 class MainScriptManager_TK(tk.Tk):
@@ -112,8 +124,6 @@ class MainScriptManager_TK(tk.Tk):
 				entryLoopCompleted = True
 
 
-def buttonTestPressed():
-	print("test button has been pressed.")
 
 
 #run program
@@ -130,4 +140,4 @@ dataProcessor.after(1, dataProcessor.runMainLoop())
 dataProcessor.mainloop()
 
 
-print("the end of the program has been reached")
+print("It is now safe to close the window")
