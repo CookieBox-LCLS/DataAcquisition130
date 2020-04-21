@@ -4,25 +4,6 @@ import numpy as np
 import tkinter as tk
 import time
 
-#initialize histogram is used to create an array for the collected histogram.  at initialization, it is an array of zero's, the same size as a raw data trace
-def initializeHistogram(rawData):
-	histogram = np.zeros(len(rawData), dtype=int)
-	return histogram
-
-
-#addHitsToHistogram takes the indexes listed in 'newHits', and increments the respective bins in the array 'histogram'.  the method returns the updated version of 'histogram'
-def addHitsToHistogram(newHits, histogram):
-	#for each of the new hits in the array 'newHits',
-	for ind in range(len(newHits)):
-		#isolate the hit index
-		hitIndexNow = newHits[ind].item()
-		#and increment the respective bin in 'histogram'
-		histogram[hitIndexNow] += 1
-
-	return histogram
-
-
-
 
 ##################################################
 #GUI CLASS
@@ -48,17 +29,25 @@ class DataAcqGUI:
 		#initialize the internal variables that store the x limits.
 		self.plotLimitsXLow, self.plotLimitsXHigh = self.axisRawTrace.get_xlim()
 
+	#initialize the lineout for the hit rate distribution
+	def plotInitHitRateDistribution(self, hitRateDistribution):
+		self.hitRateDistHandle, = self.axisRateDistribution.plot(hitRateDistribution)
+		#set the x-limits.  there is no reason for these to be changed after initialization.
+		self.axisRateDistribution.set_xlim(0, len(hitRateDistribution))
+
 
 #########################################################
 #functions for updating the GUI
 #########################################################
 
 	#updatePlotsMaster is a function that update the plots individually.  this is done as a separate method to help prevent the main loop from getting too long to read on it's own, and to help keep the code well organized
-	def updatePlotsMaster(self, histogramToPlot, newTrace, traceHitIndices):
+	def updatePlotsMaster(self, histogramToPlot, newTrace, traceHitIndices, hitRateDist, hitRateRunningWindow):
 		#update the histogram
 		self.updateHistogram(histogramToPlot)
 		#update the trace that is on display with a new trace
 		self.updateTrace(newTrace, traceHitIndices)
+		#update the hit rate plot
+		self.updateHitRateDist(hitRateDist)
 
 		#allow plots to be updated
 		self.canvasHandle.draw()
@@ -110,6 +99,13 @@ class DataAcqGUI:
 		self.axisRawTrace.collections[0].remove()
 		#plot the scatter points for the current trace
 		self.axisRawTrace.scatter(traceHitIndicesListFormat, traceHitValues)
+
+	#update the hit distribution plot with newHitRateDist.  updates the y-axis as well to best image the distribution.
+	def updateHitRateDist(self, newHitRateDist):
+		#update the hit rate distribution, and set new y-limits
+		self.hitRateDistHandle.set_ydata(newHitRateDist)
+		yLimitHigh = np.amax(newHitRateDist) + 1
+		self.axisRateDistribution.set_ylim(0, yLimitHigh)
 
 
 	#the command 'updateAxisXLimits' will command the relevant plot axis to update the x-limits to display between.  The actual values for the x limits must be pre-loaded into the GUI's internal variables 'self.plotLimitsXLow' and 'self.plotLimitsXHigh'
@@ -281,6 +277,8 @@ class DataAcqGUI:
 		#initialize the plot for the raw trace.
 		#the internal x limit variables are created and saved as part of 'plotInitRawTrace'
 		self.plotInitRawTrace(self.scriptManager_TK_Handle.histogramCollected)
+		#initialize the plot of the hit rate distribution
+		self.plotInitHitRateDistribution(self.scriptManager_TK_Handle.hitRateDistribution)
 
 		#pack the figure onto the canvas
 		self.canvasHandle = FigureCanvasTkAgg(self.figHandle, master=self.scriptManager_TK_Handle)

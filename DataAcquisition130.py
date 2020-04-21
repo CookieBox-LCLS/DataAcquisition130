@@ -37,6 +37,13 @@ from plottingAndGUI_lib import *
 from generalPurposeProcessing_lib import returnWaveformAndHits as onTheFlyProcessing
 from generalPurposeProcessing_lib import writeOutRawData as writeOut
 from generalPurposeProcessing_lib import generateNewFileAndHeader as generateNewFileAndHeader
+from generalPurposeProcessing_lib import initializeHistogram
+from generalPurposeProcessing_lib import addHitsToHistogram
+from generalPurposeProcessing_lib import addToHitRateDistribution
+from generalPurposeProcessing_lib import updateHitRateRunningWindow
+#initialize some constants used in program
+HITRATEMAX = 50
+HITRATE_RUNNINGAVERAGE_WINDOWWIDTH = 1000
 
 
 class MainScriptManager_TK(tk.Tk):
@@ -51,6 +58,10 @@ class MainScriptManager_TK(tk.Tk):
 
 		#apply the new hits found in 'hitIndices' to the histogram being updated in the GUI plot.
 		self.histogramCollected = addHitsToHistogram(hitIndices, self.histogramCollected)
+
+		#append new hit rate to hit rate monitoring metrics
+		self.hitRateDistribution = addToHitRateDistribution(hitIndices, self.hitRateDistribution)
+		self.hitRateWindowIndex, self.hitRateMonitoringWindow = updateHitRateRunningWindow(self.hitRateWindowIndex, hitIndices, self.hitRateMonitoringWindow)
 
 		#send processed data to array that is wating to be written out from
 		self.rawDataToWriteArray.append(rawData)
@@ -79,7 +90,7 @@ class MainScriptManager_TK(tk.Tk):
 					self.dataAcquisitionBranch()
 				else:
 					#command the GUI object to update the plots with new values
-					self.GUIHandle.updatePlotsMaster(self.histogramCollected, self.lastTrace, self.lastHitIndices)
+					self.GUIHandle.updatePlotsMaster(self.histogramCollected, self.lastTrace, self.lastHitIndices, self.hitRateDistribution, self.hitRateMonitoringWindow)
 
 					pass
 
@@ -91,6 +102,11 @@ class MainScriptManager_TK(tk.Tk):
 		self.mainLoopFlag = True
 		#variable 'rawDataToWriteArray' is the buffer that stores data that needs to be written out
 		self.rawDataToWriteArray = []
+		#initialize histogram that'll be used to keep track of the hit rate distribution
+		self.hitRateDistribution = np.zeros(HITRATEMAX, dtype=int)
+		#initialize the window that will be used to monitor the recent hit rate.  The number of hits for each trace will be stored in the array 'self.hitRateMonitoringWindow' in a circular fashion.  calculating the hit rate will require averaging this window, when it is time to update the displayed hit rate
+		self.hitRateMonitoringWindow = np.zeros(HITRATE_RUNNINGAVERAGE_WINDOWWIDTH, dtype=int)
+		self.hitRateWindowIndex = 0
 		#the filenames are used to create the written files.  they are based on the saveToDirectory, and the time at which the program was initiated
 		self.fileNameNow = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")#the file name that writeout data will be saved to
 		self.fileNameNowFull = saveToDirectory+str(self.fileNameNow)
@@ -109,6 +125,10 @@ class MainScriptManager_TK(tk.Tk):
 				self.histogramCollected = initializeHistogram(rawData)
 				#apply the new hits found in 'hitIndices' to the histogram being updated in the GUI plot.
 				self.histogramCollected = addHitsToHistogram(hitIndices, self.histogramCollected)
+
+				#append new hit rate to hit rate monitoring metrics
+				self.hitRateDistribution = addToHitRateDistribution(hitIndices, self.hitRateDistribution)
+				self.hitRateWindowIndex, self.hitRateMonitoringWindow = updateHitRateRunningWindow(self.hitRateWindowIndex, hitIndices, self.hitRateMonitoringWindow)
 
 				#take the first sample data, and use it to generate a new file.  generateNewFileAndHeader also creates a header file that contains information regarding the size of an individual data chunk.  data from 'rawDataToWriteArray' is written out, and an empty array is returned to take its place
 				self.rawDataToWriteArray = generateNewFileAndHeader(self.fileNameNowFull, self.rawDataToWriteArray)

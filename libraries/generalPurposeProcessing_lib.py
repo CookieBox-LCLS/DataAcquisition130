@@ -1,5 +1,51 @@
 import sys
+import numpy as np
 from CFD_lib import andreiKamalovCFD_main as CFD
+
+
+##############################################
+#methods to manage the histogram and hit rate metrics
+##############################################
+
+#initialize histogram is used to create an array for the collected histogram.  at initialization, it is an array of zero's, the same size as a raw data trace
+def initializeHistogram(rawData):
+	histogram = np.zeros(len(rawData), dtype=int)
+	return histogram
+
+
+#addHitsToHistogram takes the indexes listed in 'newHits', and increments the respective bins in the array 'histogram'.  the method returns the updated version of 'histogram'
+def addHitsToHistogram(newHits, histogram):
+	#for each of the new hits in the array 'newHits',
+	for ind in range(len(newHits)):
+		#isolate the hit index
+		hitIndexNow = newHits[ind].item()
+		#and increment the respective bin in 'histogram'
+		histogram[hitIndexNow] += 1
+
+	return histogram
+
+#addToHitRateDistribution will take in an array that representes a histogram of hit rate, and increment the bin that represents the number of hits in the trace represented by 'newHits'
+def addToHitRateDistribution(newHits, hitRateOld):
+	#clone the hit rate distribution
+	hitRateNew = hitRateOld
+	#update the hit rate distribution for the bin that needs to be incremented
+	numHits = len(newHits)
+	hitRateNew[numHits] = hitRateOld[numHits] + 1
+
+	return hitRateNew
+
+#updateHitRateRunningWindow updates the running window that is used to keep track of the recent hit rate.  a runnind window of some size is used to store the recent hit rates per trace.  when the hit rate is needed, the window contents will be averaged.  this method will take the old window (hitRateMonitoringWindowOld), replace the oldest entry as indicated with modulo(windowIndexToUse, lengthWindow), with the number of hits in newHits
+def updateHitRateRunningWindow(windowIndexToUse, newHits, hitRateMonitoringWindowOld):
+	#create the new window from the old window, and update the oldest entry with the most recent supplied trace
+	hitRateMonitoringWindowNew = hitRateMonitoringWindowOld
+	#the index supplied is the number of total traces worked through.  use this value to find the oldest bin in the runnind window array and replace it's value with the number of hits in the most recent trace
+	indexCorrect = windowIndexToUse % len(hitRateMonitoringWindowOld)
+	hitRateMonitoringWindowNew[indexCorrect] = len(newHits)
+	#update the windowIndex for the next iteration
+	windowIndexToUse += 1
+
+	return windowIndexToUse, hitRateMonitoringWindowNew
+
 
 
 ###########################################
