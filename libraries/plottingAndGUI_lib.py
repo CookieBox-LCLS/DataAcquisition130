@@ -42,6 +42,7 @@ class DataAcqGUI:
 
 	#updatePlotsMaster is a function that update the plots individually.  this is done as a separate method to help prevent the main loop from getting too long to read on it's own, and to help keep the code well organized
 	def updatePlotsMaster(self, histogramToPlot, newTrace, traceHitIndices, hitRateDist, hitRateRunningWindow):
+		#update the plots
 		#update the histogram
 		self.updateHistogram(histogramToPlot)
 		#update the trace that is on display with a new trace
@@ -49,7 +50,11 @@ class DataAcqGUI:
 		#update the hit rate plot
 		self.updateHitRateDist(hitRateDist)
 
-		#allow plots to be updated
+		#update other user feedback
+		#update the running window hit rate
+		self.updateRunningHitRate(hitRateRunningWindow)
+
+		#allow everything to be updated
 		self.canvasHandle.draw()
 		self.scriptManager_TK_Handle.update()
 
@@ -107,6 +112,22 @@ class DataAcqGUI:
 		yLimitHigh = np.amax(newHitRateDist) + 1
 		self.axisRateDistribution.set_ylim(0, yLimitHigh)
 
+	#updateRunningHitRate looks at a window (an array) of the most recent hit count.  It uses this window to calculate the recent hit rate and output it to the user.
+	def updateRunningHitRate(self, hitRateRunningWindow):
+		#retrieve the current trace index.  This is needed to alter the hit rate calculation for the early portion of the program, when the window is not fully populated.  It seems unnecessary to go through the effort of explicitly passing the index value as an argument, so it is retrieved through handles.
+		currentIndex = self.scriptManager_TK_Handle.hitRateWindowIndex
+		#calculate the hit rate.  If the program has processed fewer traces than the window size, calculate the rate with that in mind.
+		if(currentIndex < len(hitRateRunningWindow)):
+			runningAverage = np.sum(hitRateRunningWindow)/currentIndex
+		else:
+			runningAverage = np.mean(hitRateRunningWindow)
+		#format output string to include rate value.  '%.2f' sets float precision to two places after the decimal point.
+		stringToDisplay = "current hit rate: %.2f" % runningAverage
+		#display the hit rate
+		self.windowedHitRate_stringVar.set(stringToDisplay)
+
+
+
 
 	#the command 'updateAxisXLimits' will command the relevant plot axis to update the x-limits to display between.  The actual values for the x limits must be pre-loaded into the GUI's internal variables 'self.plotLimitsXLow' and 'self.plotLimitsXHigh'
 	def updateAxisXLimits(self):
@@ -120,11 +141,11 @@ class DataAcqGUI:
 	def buildButtons(self):
 		#create a button to update the plots now.  this is needed in case the run loop is having a hard time keeping up with the data acquisition rate
 		self.button_updatePlots = tk.Button(self.scriptManager_TK_Handle,text="update plots NOW", command=self.buttonPressed_updatePlots)
-		self.button_updatePlots.grid(row=8, column=17)
+		self.button_updatePlots.grid(row=9, column=17)
 
 		#create a button to exit out of the program
 		self.button_quit = tk.Button(self.scriptManager_TK_Handle,text="finish the current run", command=self.buttonPressed_quit)
-		self.button_quit.grid(row=9, column=17)
+		self.button_quit.grid(row=10, column=17)
 
 
 	#handle button presses here
@@ -140,30 +161,35 @@ class DataAcqGUI:
 
 
 #########################################
-#methods for handling entry interface widgets
+#methods for handling label and entry interface widgets
 #########################################
 	def buildEntries(self):
 		#create the label and entry for setting the x limits of the display
 		#build the lower limit entry field
 		self.labelXLow = tk.Label(self.scriptManager_TK_Handle, text = "Lower X Limit: ")
-		self.labelXLow.grid(row=8, column=0)
+		self.labelXLow.grid(row=9, column=1, sticky="E")
 		self.entryXLow = tk.Entry(self.scriptManager_TK_Handle)
-		self.entryXLow.grid(row=8, column=1)
+		self.entryXLow.grid(row=9, column=2)
 		self.entryXLow.bind('<Return>', self.entryChanged_XLowLimit)
 
 		#build the higher limit entry field
 		self.labelXHigh = tk.Label(self.scriptManager_TK_Handle, text = "Upper X Limit: ")
-		self.labelXHigh.grid(row=9, column=0)
+		self.labelXHigh.grid(row=10, column=1, sticky="E")
 		self.entryXHigh = tk.Entry(self.scriptManager_TK_Handle)
-		self.entryXHigh.grid(row=9, column=1)
+		self.entryXHigh.grid(row=10, column=2)
 		self.entryXHigh.bind('<Return>', self.entryChanged_XHighLimit)
 
 		#build the label and entry field for the bin width to use on the histogram display
 		self.labelHistoBinWidth = tk.Label(self.scriptManager_TK_Handle, text = "bin width for histogram display: ")
-		self.labelHistoBinWidth.grid(row=8, column=8, columnspan=6, sticky="E")
+		self.labelHistoBinWidth.grid(row=8, column=0, columnspan=2, sticky="E")
 		self.entryHistoBinWidth = tk.Entry(self.scriptManager_TK_Handle)
-		self.entryHistoBinWidth.grid(row=8, column=14, columnspan=1)
+		self.entryHistoBinWidth.grid(row=8, column=2, columnspan=1)
 		self.entryHistoBinWidth.bind('<Return>', self.entryChanged_HistoBinWidth)
+
+		#build label and entry for recent hit rate disp lay
+		self.windowedHitRate_stringVar = tk.StringVar()
+		self.labelWindowedHitRate = tk.Label(self.scriptManager_TK_Handle, textvariable=self.windowedHitRate_stringVar)
+		self.labelWindowedHitRate.grid(row=8, column=16, columnspan=2)
 
 	#command that is executed when the entry field for the lower x limit is updated.
 	#I don't understand tkinter and entries particularly well, but the <Return> binding for entries will call the associated method and pass the key press event.  The call errors if keyPressEvent is not passed in; this method is written to receive the keyPressEvent, but does not do anything with it.
