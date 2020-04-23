@@ -96,14 +96,12 @@ class DataAcqGUI:
 	#update the raw trace plot with latest trace provided by the execution loop
 	def updateTrace(self, newTrace, traceHitIndices):
 		self.rawTraceHandle.set_ydata(newTrace)
-		#traceHitIndices is fed in as a awkward structure.  re-format it into a simple list
-		traceHitIndicesListFormat = [x[0] for x in traceHitIndices]
 		#get the y-values for the hits
-		traceHitValues = newTrace[traceHitIndicesListFormat]
+		traceHitValues = newTrace[traceHitIndices]
 		#remove the previous scatter plot
 		self.axisRawTrace.collections[0].remove()
 		#plot the scatter points for the current trace
-		self.axisRawTrace.scatter(traceHitIndicesListFormat, traceHitValues)
+		self.axisRawTrace.scatter(traceHitIndices, traceHitValues)
 
 	#update the hit distribution plot with newHitRateDist.  updates the y-axis as well to best image the distribution.
 	def updateHitRateDist(self, newHitRateDist):
@@ -157,7 +155,7 @@ class DataAcqGUI:
 	#manual plot update button was pressed.
 	def buttonPressed_updatePlots(self):
 		print("plots are being updated.")
-		self.updatePlotsMaster(self.scriptManager_TK_Handle.histogramCollected, self.scriptManager_TK_Handle.lastTrace)
+		self.updatePlotsMaster(self.scriptManager_TK_Handle.histogramCollected, self.scriptManager_TK_Handle.lastTrace, self.scriptManager_TK_Handle.lastHitIndices, self.scriptManager_TK_Handle.hitRateDistribution, self.scriptManager_TK_Handle.hitRateMonitoringWindow)
 
 
 #########################################

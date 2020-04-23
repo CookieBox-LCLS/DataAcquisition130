@@ -1,6 +1,8 @@
 import sys
 import numpy as np
+#select which CFD to use to process data
 from CFD_lib import andreiKamalovCFD_main as CFD
+# from CFD_lib import aveGattonCFD_main as CFD
 
 
 ##############################################

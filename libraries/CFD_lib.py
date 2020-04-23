@@ -14,7 +14,64 @@ def ryanCoffeeCFD_main(dataIn_Amplitude):
 #Ave CFD section
 ###########################################
 def aveGattonCFD_main(dataIn_Amplitude):
-    pass
+	CFD_TH = 10.  # the noise is scaled to approximately 5. This sets the threshold to 10x the noise level.
+	CFD_offset = 5
+	conv_len = 3
+
+
+
+	wf_amp = dataIn_Amplitude
+
+
+	#these look like threshold calculations
+	wf_amp_avg = np.sum(wf_amp) / wf_amp.shape[0]
+	wf_amp_sigma = .5 * np.sqrt(np.sum((wf_amp - wf_amp_avg) ** 2) / wf_amp.shape[0])
+	wf_amp = (wf_amp - wf_amp_avg) / wf_amp_sigma
+	#this loop is executed once.  not apparent why it is in a loop statement
+	for _ in np.arange(1):
+		#interesting choice of convolution filter
+	    wf_amp = np.convolve(wf_amp, np.concatenate((np.ones(conv_len), np.zeros(conv_len))) / conv_len,
+	                         mode='same')
+
+	#some sort of thresholding
+	wf_histo, wf_bins = np.histogram(wf_amp, bins=100)
+	wf_log_histo = np.log(wf_histo)
+	good_value_cut = np.logical_not(np.isinf(wf_log_histo))
+	coeff = np.polynomial.polynomial.polyfit(x=wf_bins[:-1][good_value_cut], y=wf_log_histo[good_value_cut], deg=5)
+	sigma = np.sqrt(-1. / coeff[2])
+	CFD_TH = 3.0 * sigma
+
+	boolean_threshold = np.logical_or(wf_amp > CFD_TH, wf_amp < -CFD_TH)
+	boolean_zero_padding = np.logical_and(np.append(np.logical_not(boolean_threshold), np.zeros(CFD_offset)),
+	                                      np.append(np.zeros(CFD_offset), boolean_threshold))[0:-CFD_offset]
+
+	wf_zeroed = wf_amp.copy()
+	wf_zeroed[boolean_zero_padding] = 0
+
+	#i think boolean_select is True at indices that contain a found hit?
+	boolean_select = np.logical_or(boolean_threshold, boolean_zero_padding)
+
+	th_wave = wf_zeroed[boolean_select]
+
+	indexList = np.arange(1, (len(wf_amp) + 1))
+	th_time_wave = indexList[boolean_select]
+
+	#some sort of traditional CFD method
+	CFD_input = np.append(th_wave, np.zeros(CFD_offset))
+	CFD_shift_scale = np.append(np.zeros(CFD_offset), th_wave)
+	CFD_wave = CFD_input - CFD_shift_scale
+
+	CFD_wave_pos = np.where(CFD_wave > 0, True, False)
+	CFD_wave_neg = np.where(CFD_wave <= 0, True, False)
+    #zero_points is a zero crossing within a local subset?
+	zero_points = np.logical_and(CFD_wave_pos[:-1], CFD_wave_neg[1:])
+	time_locs = th_time_wave[:-1][zero_points[5:]]
+
+	return dataIn_Amplitude, time_locs
+
+
+
+
 
 
 ##################################################
@@ -32,7 +89,7 @@ def andreiKamalovCFD_main(dataIn_Amplitude):
 	#calculate an upper threshold above which to look for peaks in the raw trace
 	threshold = 4*sigma
 	#return the indices for which the raw data exceeds the threshold.
-	dataIn_AboveThreshold_Indices = np.argwhere(dataIn_Amplitude > threshold)
+	dataIn_AboveThreshold_Indices = np.flatnonzero(dataIn_Amplitude > threshold)
 
 	#if it's likely that there are zero hits in this trace, there's no need to perform the remainder of the CFD processing.
 	if(len(dataIn_AboveThreshold_Indices) == 0):
@@ -68,6 +125,7 @@ def andreiKamalovCFD_main(dataIn_Amplitude):
 		#append good hits to the array 'hitIndices'
 		if(validSeriesFlag):
 			hitIndices.append(hitIndex)
+
 	#there are now a set of found hitIndices.  but these are in respect to the processed comparedTrace.  need to un-shift the indices to represent hits for the actual trace (dataIn_Amplitude)
 	hitIndices = [x + indicesShift for x in hitIndices]
 
@@ -87,7 +145,6 @@ def andreiKamalovCFD_main(dataIn_Amplitude):
 			if (len(hitIndices) > 0):
 				pyplt.scatter(hitIndices[ind].item(), dataIn_Amplitude[hitIndices[ind].item()])
 			pyplt.show()
-
 
 	return dataIn_Amplitude, hitIndices
 
