@@ -133,9 +133,9 @@ class DataAcqGUI:
 		self.axisRawTrace.set_xlim(self.plotLimitsXLow, self.plotLimitsXHigh)
 
 	#########################################
-	#methods for handling button interface widgets
+	#methods for handling button and checkbox interface widgets
 	#########################################
-	#create and grid buttons.  also dictate which commands they are to execute should they be pressed.
+	#create and grid buttons as well as checkboxes.  also dictate which commands they are to execute should they be pressed.
 	def buildButtons(self):
 		#create a button to update the plots now.  this is needed in case the run loop is having a hard time keeping up with the data acquisition rate
 		self.button_updatePlots = tk.Button(self.scriptManager_TK_Handle,text="update plots NOW", command=self.buttonPressed_updatePlots)
@@ -144,6 +144,14 @@ class DataAcqGUI:
 		#create a button to exit out of the program
 		self.button_quit = tk.Button(self.scriptManager_TK_Handle,text="finish the current run", command=self.buttonPressed_quit)
 		self.button_quit.grid(row=10, column=17)
+
+		#create a checkbox to dictate whether the loop auto-updates the GUI while running.  Can disable auto-updates to prioritize data acquisition and analysis.
+		self.checkboxAutoPlot_boolVar = tk.BooleanVar()#create a necessary variable
+		self.checkboxAutoplot = tk.Checkbutton(self.scriptManager_TK_Handle, text="enable auto-plotting", variable=self.checkboxAutoPlot_boolVar, onvalue=True, offvalue=False, command=self.buttonPressed_autoPlot)
+		#grid the autoplot checkbox
+		self.checkboxAutoplot.grid(row=8, column=5)
+		#default the checkbox to being on at start of run
+		self.checkboxAutoplot.select()
 
 
 	#handle button presses here
@@ -156,6 +164,18 @@ class DataAcqGUI:
 	def buttonPressed_updatePlots(self):
 		print("plots are being updated.")
 		self.updatePlotsMaster(self.scriptManager_TK_Handle.histogramCollected, self.scriptManager_TK_Handle.lastTrace, self.scriptManager_TK_Handle.lastHitIndices, self.scriptManager_TK_Handle.hitRateDistribution, self.scriptManager_TK_Handle.hitRateMonitoringWindow)
+
+	#the checkbox that represents the auto-plot option was pressed.  change auto update flag status
+	def buttonPressed_autoPlot(self):
+		if(self.checkboxAutoPlot_boolVar.get()):
+			#if the checkbox is clicked on, enable autoplot
+			print("enabling plot auto-updates")
+			self.scriptManager_TK_Handle.flagAutoPlot = True
+		else:
+			#checkbox is clicked off.  disable autoplot
+			print("disabling plot auto-updates")
+			self.scriptManager_TK_Handle.flagAutoPlot = False
+
 
 
 #########################################

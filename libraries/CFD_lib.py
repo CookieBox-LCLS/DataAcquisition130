@@ -4,7 +4,7 @@ import numpy as np
 #this library contains different CFD methods that may be used for on-the-fly processing 
 
 ###########################################
-#Ryan CFD section
+#Ryan CFD section - IS NOT CURRENTLY COMPATIBLE (04/23/2020)
 ###########################################
 def ryanCoffeeCFD_main(dataIn_Amplitude):
 	#this block is for using this program from terminal

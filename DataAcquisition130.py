@@ -9,18 +9,18 @@ import sys
 runningOnScope = False
 if(runningOnScope):
 	#select the folder to which data will be written out
-	saveToDirectory = ""
+	saveToDirectory = "D:/Waveforms/ScopeCollect/"
 	#write out the folder from which the libraries can be found
-	sys.path.append("")
+	sys.path.append("D:/DataAcquisition130/libraries")
 
 	#import libraries meant to acquire data on scope.  commands written to libraries need to be renamed to what they're called in the script.  this is to encourage cross-platform development
-	from lecroyLiveAcquisition_lib import checkDataReadiness as getDataBuffered
+	from lecroyLiveAcquisition_lib import dataIsReadyForReadout as getDataBuffered
 	from lecroyLiveAcquisition_lib import readInDataFromScope_c1 as readInData
 else:
+	#provide the directory folder from which the libraries can be found
+	sys.path.append("C:/Users/Kevin/Documents/GitHub/DataAcquisition130/libraries")
 	#select the folder to which data will be written out
 	saveToDirectory = "C:\\Andrei\\dataWriteOut\\"
-	#write out the folder from which the libraries can be found
-	sys.path.append("C:/Users/Kevin/Documents/GitHub/DataAcquisition130/libraries")
 
 	#import libraries meant to simulate data acquisition with pre-acquired .trc files.  commands written to libraries need to be renamed to what they're called in the script.  this is to encourage cross-platform development
 	from simulatingWithCollectedData_lib import dataBufferRandomSimulation as getDataBuffered
@@ -44,6 +44,7 @@ from generalPurposeProcessing_lib import updateHitRateRunningWindow
 #initialize some constants used in program
 HITRATEMAX = 50
 HITRATE_RUNNINGAVERAGE_WINDOWWIDTH = 1000
+NUMBER_ITERATIONS_BETWEEN_PLOT = 9
 
 
 class MainScriptManager_TK(tk.Tk):
@@ -71,28 +72,53 @@ class MainScriptManager_TK(tk.Tk):
 		self.lastHitIndices = hitIndices
 
 
-	def runMainLoop(self):
+#runMainLoop has been updated with runMainLoop_repetitive.  the older code is kept here for now, until it is decided whether the main loop structure in the new alternate works well.
+	# def runMainLoop(self):
+	# 	while self.mainLoopFlag:
+
+	# 		if getDataBuffered():
+	# 			#call method that does main acquisition.  the array rawDataToWriteArray will have an element attached to it that represents the acquired data post-fly-processing
+	# 			self.dataAcquisitionBranch()
+	# 		else:
+	# 			#write out any data in variable arrays that are awaiting to be written out.
+	# 			#the array 'rawDataToWriteArray' is returned as an empty array that can be re-filled.  It serves as a temporary variable buffer between data acquisitions and data write-outs.
+	# 			self.rawDataToWriteArray = writeOut(self.fileNameNowFull, self.rawDataToWriteArray)
+
+	# 			#update internal variables with written out data for plotting purposes
+
+	# 			#see if there is data in the buffer now.  if there is, go ahead and acquire it.
+	# 			if getDataBuffered():
+	# 				#there is buffered data, need to go acquire it from the data buffer
+	# 				self.dataAcquisitionBranch()
+	# 			else:
+	# 				#the user has the option to enable/disable auto plotting.  The option is controlled through 'checkboxAutoplot' in the GUIHandle object, which has access to and controls the flag 'flagAutoPlot', a boolean flag that can prevent auto-plotting.
+	# 				if(self.flagAutoPlot):
+	# 					#command the GUI object to update the plots with new values
+	# 					self.GUIHandle.updatePlotsMaster(self.histogramCollected, self.lastTrace, self.lastHitIndices, self.hitRateDistribution, self.hitRateMonitoringWindow)
+	# 				else:
+	# 					self.update()
+
+	#runMainLoop_repetitive is an alternate option for a main loop structure.  Instead of basing operations on data buffer readiness, it collects a number of data sets, as defined in NUMBER_ITERATIONS_BETWEEN_PLOT.  The loop then writes out the acquired data, and updates the plot
+	def runMainLoop_repetitive(self):
 		while self.mainLoopFlag:
-
-			if getDataBuffered():
-				#call method that does main acquisition.  the array rawDataToWriteArray will have an element attached to it that represents the acquired data post-fly-processing
-				self.dataAcquisitionBranch()
-			else:
-				#write out any data in variable arrays that are awaiting to be written out.
-				#the array 'rawDataToWriteArray' is returned as an empty array that can be re-filled.  It serves as a temporary variable buffer between data acquisitions and data write-outs.
-				self.rawDataToWriteArray = writeOut(self.fileNameNowFull, self.rawDataToWriteArray)
-
-				#update internal variables with written out data for plotting purposes
-
-				#see if there is data in the buffer now.  if there is, go ahead and acquire it.
+			#set iteration counter back to zero
+			iterationNow = 0
+			#run the acquisition branch a set number of times.
+			while (iterationNow < NUMBER_ITERATIONS_BETWEEN_PLOT):
 				if getDataBuffered():
-					#there is buffered data, need to go acquire it from the data buffer
 					self.dataAcquisitionBranch()
-				else:
-					#command the GUI object to update the plots with new values
-					self.GUIHandle.updatePlotsMaster(self.histogramCollected, self.lastTrace, self.lastHitIndices, self.hitRateDistribution, self.hitRateMonitoringWindow)
+					iterationNow += 1
 
-					pass
+			#write out all acquired data
+			self.rawDataToWriteArray = writeOut(self.fileNameNowFull, self.rawDataToWriteArray)
+
+			#update the plots to show the full data set, including the newly collected value
+			if(self.flagAutoPlot):
+				self.GUIHandle.updatePlotsMaster(self.histogramCollected, self.lastTrace, self.lastHitIndices, self.hitRateDistribution, self.hitRateMonitoringWindow)
+			else:
+				self.update()
+
+
 
 
 	#postConstructionClassInitialization is intended to be the __init__ constructor - but it cannot be used as an init, since tk.Tk() seems to require its own initializer to be run for proper tk usage.  This contruction performs variable initialization, and runs the first step of data acquisition to help construct other objects needed for program execution.
@@ -100,6 +126,8 @@ class MainScriptManager_TK(tk.Tk):
 		#setup lines and initialization of variables
 		#mainLoopFlag is used as a flag to continue the main loop.  it can be cancelled to close out the program in a controlled way
 		self.mainLoopFlag = True
+		#flagAutoPlot is a boolean flag that can be changed by the user through the GUI to enable/disable auto plotting in the main loop
+		self.flagAutoPlot = True
 		#variable 'rawDataToWriteArray' is the buffer that stores data that needs to be written out
 		self.rawDataToWriteArray = []
 		#initialize histogram that'll be used to keep track of the hit rate distribution
@@ -154,10 +182,7 @@ dataProcessor = MainScriptManager_TK()
 #the TK object still has to go through Tkinter's constructor.  this method performs the current program's necessary initialization operations.
 dataProcessor.postConstructionClassInitialization()
 
+dataProcessor.after(1, dataProcessor.runMainLoop_repetitive())
 
-dataProcessor.after(1, dataProcessor.runMainLoop())
 # #pretty sure mainloop actually never gets called.  it seems once the after method is initiated, the thing works well enough as a gui
 dataProcessor.mainloop()
-
-
-print("It is now safe to close the window")

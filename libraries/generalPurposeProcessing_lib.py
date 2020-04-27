@@ -72,8 +72,12 @@ def writeOutRawData(fileNameNowFull, rawDataToWrite):
 	#the inbound list is a series associated with each readout trace
 	for i in range(len(rawDataToWrite)):
 		#for each element in the list, remove the first element and write it out
-		toWrite = rawDataToWrite.pop(0)
-		toWrite.tofile(file, "")
+		toWriteList = rawDataToWrite.pop(0)
+		#the popped value is likely a list.  convert it to a numpy array to optimize writeout speed.
+		toWrite = np.asarray(toWriteList)
+		toWrite.tofile(file)
+		#keep alternate method (below) commented out in case .tofile still fails
+		#file.write(toWrite)
 
 		#process the data that is to be written, and acquire new updates to variables needed for GUI
 	file.close()
@@ -88,7 +92,9 @@ def generateNewFileAndHeader(fileNameNow, rawDataToWriteArray):
 	#create and open the file that will be used to store processed data.
 	file = open(str(fileNameHeader), 'w')
 	#there should only be one entry here - use it to gauge length of write out, and create a header with that information.
-	toWrite = rawDataToWriteArray.pop(0)
+	toWriteList = rawDataToWriteArray.pop(0)
+	#the popped value is likely a list.  convert it to a numpy array to optimize writeout speed.
+	toWrite = np.asarray(toWriteList)
 	#get binary size of data sample
 	binaryDataSize = sys.getsizeof(toWrite)
 	#output size of binary data
@@ -100,7 +106,10 @@ def generateNewFileAndHeader(fileNameNow, rawDataToWriteArray):
 	#open the file to which post-on-the-fly-processed data is written.
 	file = open(str(fileNameNow), 'ab')
 	#the portion of binary data that needs saving is the single trace pop'd off of the array earlier.
-	toWrite.tofile(file, "")
+	toWrite.tofile(file)
+	#keep alternate method (below) commented out in case .tofile still fails
+	#file.write(toWrite)
+	
 	file.close()
 
 	#the empty array is returned so that the loop that called this function knows that there is nothing else to read out of the array.

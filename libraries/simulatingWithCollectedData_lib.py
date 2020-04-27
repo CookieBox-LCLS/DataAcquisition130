@@ -8,8 +8,9 @@ def dataBufferRandomSimulation():
 
 
 ###########################################
+   #denote the folder which contains collected .trc files from which to simulate run time.
 dataFolderDirectory = 'C:\\Andrei\\fileTransfer\\03162020\\03_16_2020_CX60_6013E-S+'
-globPathname = dataFolderDirectory+'\\*.trc'
+globPathname = dataFolderDirectory + '\\*.trc'
 fileArray = glob.glob(globPathname)
 fileArrayIndex = 0
 def readInDataFromFolder():
