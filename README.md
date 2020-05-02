@@ -7,7 +7,7 @@ The code uses the python library tkinter to create and manage a GUI while the da
 
 # installation and setup
 1) go into 'DataAcquisition130.py and look at the block of code near the top between 'import sys' and 'import numpy as np'.  If the code is being installed on the oscilloscope, set 'runningOnScope' to 'True'.  If being installed on a laptop to simulate data acquisition, set 'runningOnScope' to 'False'.
-2) Note that for either option, there are some directories that need to be set.  Note that regardless of operating system, slashes in directory names ought to be either '/' (recommended) or '\\'.  '\' which is used on windows machines, is a native character in python and messes thigns up.  Python uses '\\' as a recognized alternate.
+2) Note that for either option, there are some directories that need to be set.  Note that regardless of operating system, slashes in directory names ought to be either '/' (recommended) or '\\\\'.  '\\' which is used on windows machines, is a native character in python and messes thigns up.  Python uses '\\' as a recognized alternate.
 -'saveToDirectory' represents the directory to which data will be saved out.  note that this is the only directory name that needs to end in a slash
 -the directory that houses the libraries for this code must be added to the system path using the 'sys.path.append(...)' command.
 -if simulating from .trc files that are already on the host machine, the used must go into 'simulatingWithCollectedData_lib.py' and set the directory variable 'dataFolderDirectory' to reflect the directory that has the .trc source files.
