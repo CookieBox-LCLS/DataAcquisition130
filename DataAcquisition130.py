@@ -6,7 +6,7 @@
 #set to True if code is running on LeCroy scope.  if proto-testing, set to False.
 import sys
 
-runningOnScope = True
+runningOnScope = False
 if(runningOnScope):
 	#select the folder to which data will be written out
 	saveToDirectory = "D:/Waveforms/ScopeCollect/"
