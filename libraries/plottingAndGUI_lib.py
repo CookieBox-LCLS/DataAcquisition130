@@ -97,11 +97,19 @@ class DataAcqGUI:
 	def updateTrace(self, newTrace, traceHitIndices):
 		self.rawTraceHandle.set_ydata(newTrace)
 		#get the y-values for the hits
-		traceHitValues = newTrace[traceHitIndices]
-		#remove the previous scatter plot
-		self.axisRawTrace.collections[0].remove()
-		#plot the scatter points for the current trace
-		self.axisRawTrace.scatter(traceHitIndices, traceHitValues)
+		if len(traceHitIndices) == 0:
+			#need special handling for the case of no hits.  otherwise can search a list with an empty list passed as an index parameter, and this can error out.
+			traceHitValues = []
+			#remove the previous scatter plot
+			self.axisRawTrace.collections[0].remove()
+			#plot an empty scatter placeholder, so that next call to collections[0].remove() does not fail
+			self.axisRawTrace.scatter(traceHitIndices, traceHitValues)
+		else:
+			traceHitValues = newTrace[traceHitIndices]
+			#remove the previous scatter plot
+			self.axisRawTrace.collections[0].remove()
+			#plot the scatter points for the current trace
+			self.axisRawTrace.scatter(traceHitIndices, traceHitValues)
 
 	#update the hit distribution plot with newHitRateDist.  updates the y-axis as well to best image the distribution.
 	def updateHitRateDist(self, newHitRateDist):
@@ -139,11 +147,11 @@ class DataAcqGUI:
 	def buildButtons(self):
 		#create a button to update the plots now.  this is needed in case the run loop is having a hard time keeping up with the data acquisition rate
 		self.button_updatePlots = tk.Button(self.scriptManager_TK_Handle,text="update plots NOW", command=self.buttonPressed_updatePlots)
-		self.button_updatePlots.grid(row=9, column=17)
+		self.button_updatePlots.grid(row=10, column=17)
 
 		#create a button to exit out of the program
 		self.button_quit = tk.Button(self.scriptManager_TK_Handle,text="finish the current run", command=self.buttonPressed_quit)
-		self.button_quit.grid(row=10, column=17)
+		self.button_quit.grid(row=11, column=17)
 
 		#create a checkbox to dictate whether the loop auto-updates the GUI while running.  Can disable auto-updates to prioritize data acquisition and analysis.
 		self.checkboxAutoPlot_boolVar = tk.BooleanVar()#create a necessary variable
@@ -204,10 +212,10 @@ class DataAcqGUI:
 		self.entryHistoBinWidth.grid(row=8, column=2, columnspan=1)
 		self.entryHistoBinWidth.bind('<Return>', self.entryChanged_HistoBinWidth)
 
-		#build label and entry for recent hit rate disp lay
+		#build label and entry for recent hit rate display
 		self.windowedHitRate_stringVar = tk.StringVar()
 		self.labelWindowedHitRate = tk.Label(self.scriptManager_TK_Handle, textvariable=self.windowedHitRate_stringVar)
-		self.labelWindowedHitRate.grid(row=8, column=16, columnspan=2)
+		self.labelWindowedHitRate.grid(row=9, column=15, columnspan=3)
 
 	#command that is executed when the entry field for the lower x limit is updated.
 	#I don't understand tkinter and entries particularly well, but the <Return> binding for entries will call the associated method and pass the key press event.  The call errors if keyPressEvent is not passed in; this method is written to receive the keyPressEvent, but does not do anything with it.
@@ -302,7 +310,7 @@ class DataAcqGUI:
 		heightRateDistribution = (verticalSeam - verticalSpacing/2) - yMinRateDistribution
 
 		#create the figure and axis, as prescribed by the setup above
-		self.figHandle = pyplt.figure(figsize=(12,9))
+		self.figHandle = pyplt.figure(figsize=(8,6))
 		self.axisHistogram = self.figHandle.add_axes([xMinHist, yMinHist, widthHist, heightHist])
 		self.axisRawTrace = self.figHandle.add_axes([xMinTrace, yMinTrace, widthTrace, heightTrace])
 		self.axisRateDistribution = self.figHandle.add_axes([xMinRateDistribution, yMinRateDistribution, widthRateDistribution, heightRateDistribution])
