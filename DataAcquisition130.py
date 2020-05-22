@@ -5,7 +5,11 @@
 
 import sys
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
+=======
+#set to True if code is running on LeCroy scope.  if proto-testing, set to False.
+>>>>>>> Stashed changes
 =======
 #set to True if code is running on LeCroy scope.  if proto-testing, set to False.
 >>>>>>> Stashed changes
