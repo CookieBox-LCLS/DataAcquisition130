@@ -3,9 +3,12 @@
 ##########
 #DataAcquisition130.py is designed to be the master script for data acquisition performed in 130.  The code was tested on a set of individual .trc files offline from the oscilloscope.
 
-#set to True if code is running on LeCroy scope.  if proto-testing, set to False.
 import sys
+<<<<<<< Updated upstream
 
+=======
+#set to True if code is running on LeCroy scope.  if proto-testing, set to False.
+>>>>>>> Stashed changes
 runningOnScope = True
 if(runningOnScope):
 	#select the folder to which data will be written out
@@ -70,33 +73,6 @@ class MainScriptManager_TK(tk.Tk):
 		#newdata is saved as the last trace observed, and the respective hit indices
 		self.lastTrace = newData
 		self.lastHitIndices = hitIndices
-
-
-#runMainLoop has been updated with runMainLoop_repetitive.  the older code is kept here for now, until it is decided whether the main loop structure in the new alternate works well.
-	# def runMainLoop(self):
-	# 	while self.mainLoopFlag:
-
-	# 		if getDataBuffered():
-	# 			#call method that does main acquisition.  the array rawDataToWriteArray will have an element attached to it that represents the acquired data post-fly-processing
-	# 			self.dataAcquisitionBranch()
-	# 		else:
-	# 			#write out any data in variable arrays that are awaiting to be written out.
-	# 			#the array 'rawDataToWriteArray' is returned as an empty array that can be re-filled.  It serves as a temporary variable buffer between data acquisitions and data write-outs.
-	# 			self.rawDataToWriteArray = writeOut(self.fileNameNowFull, self.rawDataToWriteArray)
-
-	# 			#update internal variables with written out data for plotting purposes
-
-	# 			#see if there is data in the buffer now.  if there is, go ahead and acquire it.
-	# 			if getDataBuffered():
-	# 				#there is buffered data, need to go acquire it from the data buffer
-	# 				self.dataAcquisitionBranch()
-	# 			else:
-	# 				#the user has the option to enable/disable auto plotting.  The option is controlled through 'checkboxAutoplot' in the GUIHandle object, which has access to and controls the flag 'flagAutoPlot', a boolean flag that can prevent auto-plotting.
-	# 				if(self.flagAutoPlot):
-	# 					#command the GUI object to update the plots with new values
-	# 					self.GUIHandle.updatePlotsMaster(self.histogramCollected, self.lastTrace, self.lastHitIndices, self.hitRateDistribution, self.hitRateMonitoringWindow)
-	# 				else:
-	# 					self.update()
 
 	#runMainLoop_repetitive is an alternate option for a main loop structure.  Instead of basing operations on data buffer readiness, it collects a number of data sets, as defined in NUMBER_ITERATIONS_BETWEEN_PLOT.  The loop then writes out the acquired data, and updates the plot
 	def runMainLoop_repetitive(self):
