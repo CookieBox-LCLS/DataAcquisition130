@@ -4,20 +4,10 @@
 #DataAcquisition130.py is designed to be the master script for data acquisition performed in 130.  The code was tested on a set of individual .trc files offline from the oscilloscope.
 
 import sys
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 
-=======
+
 #set to True if code is running on LeCroy scope.  if proto-testing, set to False.
->>>>>>> Stashed changes
-=======
-#set to True if code is running on LeCroy scope.  if proto-testing, set to False.
->>>>>>> Stashed changes
-=======
-#set to True if code is running on LeCroy scope.  if proto-testing, set to False.
->>>>>>> Stashed changes
-runningOnScope = True
+runningOnScope = False
 if(runningOnScope):
 	#select the folder to which data will be written out
 	saveToDirectory = "D:/Waveforms/ScopeCollect/"
