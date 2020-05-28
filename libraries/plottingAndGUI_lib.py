@@ -96,20 +96,20 @@ class DataAcqGUI:
 	#update the raw trace plot with latest trace provided by the execution loop
 	def updateTrace(self, newTrace, traceHitIndices):
 		self.rawTraceHandle.set_ydata(newTrace)
-		#get the y-values for the hits
+		#get the y-values for the hits.  Will need special handling for the case of no hits.  This is because an empty hit indices ([]) list will cause an error when fed in as a parameter into the values list, newTrace.
 		if len(traceHitIndices) == 0:
-			#need special handling for the case of no hits.  otherwise can search a list with an empty list passed as an index parameter, and this can error out.
+			#special case of zero hits found in trace.
 			traceHitValues = []
 			#remove the previous scatter plot
 			self.axisRawTrace.collections[0].remove()
 			#plot an empty scatter placeholder, so that next call to collections[0].remove() does not fail
-			self.axisRawTrace.scatter(traceHitIndices, traceHitValues)
+			self.axisRawTrace.scatter(traceHitIndices, traceHitValues, c='r')
 		else:
 			traceHitValues = newTrace[traceHitIndices]
 			#remove the previous scatter plot
 			self.axisRawTrace.collections[0].remove()
 			#plot the scatter points for the current trace
-			self.axisRawTrace.scatter(traceHitIndices, traceHitValues)
+			self.axisRawTrace.scatter(traceHitIndices, traceHitValues, c='r')
 
 	#update the hit distribution plot with newHitRateDist.  updates the y-axis as well to best image the distribution.
 	def updateHitRateDist(self, newHitRateDist):

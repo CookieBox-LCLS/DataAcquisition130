@@ -29,6 +29,13 @@ class WaveformAnalysisGUI:
 		#update the PSD of the zoomed in window to match the new zoomed in region being displayed
 		self.updateZoomedFFT(self.scriptManager_TK_Handle.zoomedRegionPSD)
 
+		#scale the frequency plots' y-axis to best image the individual FFT plots.  This is done with 'setNewYLimits', which will update the y-scale for the FFT of the windowed region based on a supplied boolean argument.  This plot's y-scale should not be udpated if there are no hits within it, since that would only tell the y-scale to zoom in on noise.
+		if(len(self.scriptManager_TK_Handle.lastTraceHits) > 0):
+			#there is a new hit in windowed region's FFT.  update this plot's y-scale with the otehrs
+			self.setNewYLimits(updateScaleForWindowedFFT=True)
+		else:
+			#there can't be a hit within the windowed region's FFT.  do NOT update that plot's y-axis, you will only amplify noise.
+			self.setNewYLimits(updateScaleForWindowedFFT=False)
 
 		#all plot lines are updated.  now redraw the plots and update tkinter
 		self.canvasHandle.draw()
@@ -46,21 +53,19 @@ class WaveformAnalysisGUI:
 		#then find the y-values of the scatter plot
 		traceHitValues = newTrace[newTraceHitIndices]
 		#overlay the scatter dots onto the trace plot
-		self.axisFullTrace.scatter(newTraceHitTimes, traceHitValues)
+		self.axisFullTrace.scatter(newTraceHitTimes, traceHitValues, c='r')
 
 	#update the plot that shows the power spectral distribution of the last full trace
 	def updateFourierSpectrumCurrent(self, newPSD):
-		self.fourierSpectrumCurrentHandle.set_ydata(newPSD)
-		#find and apply new y-limits
-		yLimitHigh = 1.05*np.amax(newPSD)
-		self.axisFourierSpectrumCurrent.set_ylim(0, yLimitHigh)
+		#normalize the PSD before plotting it, and then plot it.
+		normedPSD = self.normalizeArray(newPSD)
+		self.fourierSpectrumCurrentHandle.set_ydata(normedPSD)
 
 	#update the incoherently summed up fourier PSD of the run with the updated value
 	def updateFourierSpectrumSummed(self, newSum):
-		self.fourierSpectrumSummedHandle.set_ydata(newSum)
-		#find and apply new y-limits
-		yLimitHigh = 1.05*np.amax(newSum)
-		self.axisFourierSpectrumSummed.set_ylim(0, yLimitHigh)
+		#normalize the PSD before plotting it, and then plot it.
+		normedPSD = self.normalizeArray(newSum)
+		self.fourierSpectrumSummedHandle.set_ydata(normedPSD)
 
 	#update the zoomed in window with the new trace being looked into
 	def updateZoomedTrace(self, newTrace, newWindowIndices, hitIndices):
@@ -79,25 +84,93 @@ class WaveformAnalysisGUI:
 		scatTimes = timeAxisFull[hitIndices]
 		scatVals = newTrace[hitIndices]
 		#plot the new scat times
-		self.axisZoomedTrace.scatter(scatTimes, scatVals)
+		self.axisZoomedTrace.scatter(scatTimes, scatVals, c='r')
 
 		#set the limits to reflect the window
 		self.axisZoomedTrace.set_xlim(timeAxisTrace[0], timeAxisTrace[-1])
 
 	#update the PSD of the zoomed in window with the new zoomed in PSD values
 	def updateZoomedFFT(self, newPSD):
+		#do NOT normalize for this plot.  When there is a plot of a zero-hit region's FFT, normalizing it will cause the noise to blow up.  Rather, just plot the values and trust the method 'setNewYLimits' to set appropriate y-values for cases of zero-hit regions.
+		##normalize the PSD before plotting it, and then plot it.
+		#normedPSD = self.normalizeArray(newPSD)
 		self.zoomedFFTHandle.set_ydata(newPSD)
-		#find and apply new y-limits
-		yLimitHigh = 1.05*np.amax(newPSD)
-		self.axisZoomedFFT.set_ylim(0, yLimitHigh)
-
-
 
 	#the command 'updateAxisFreqLimits' will command the relevant plot axis to update the x-limits to display between.  The actual values for the x limits must be pre-loaded into the GUI's internal variables 'self.freqLimitsLow' and 'self.freqLimitsHigh'.  This method is called after a change in the entry fields for frequency limits has been input by the user.
 	def updateAxisFreqLimits(self):
 		self.axisZoomedFFT.set_xlim(self.freqLimitsLow, self.freqLimitsHigh)
 		self.axisFourierSpectrumSummed.set_xlim(self.freqLimitsLow, self.freqLimitsHigh)
 		self.axisFourierSpectrumCurrent.set_xlim(self.freqLimitsLow, self.freqLimitsHigh)
+		#It helps to scale the y-limits to be useful for the region between the new freqLimits.  This is done by calling method 'setNewYLimits' in method 'updatePlots'.  The method 'setNewYLimits' requires updated cutoff indices.  the indices are updated with 'findNewIndexLimits'.
+		self.findNewIndexLimits()
+
+	#'findNewIndexLimits' is called when new frequency plotting limits are supplied by the user.  this method takes the new cutoff frequencies, and uses them to compute the corresponding cutoff indies.
+	def findNewIndexLimits(self):
+		#load the frequency axis from the WaveformAnalyzer_TK object.  The user will probably supply the frequency units that are on display in the plots.  Divide by self.frequencyUnits, the units that frequencies are plotted in, to match with what the user will (probably) supply.
+		freqAxisFull = self.scriptManager_TK_Handle.frequencyAxisNondegenerate/self.frequencyUnits
+		#load the frequency values set by the user.
+		valLow = self.freqLimitsLow
+		valHigh = self.freqLimitsHigh
+		#find and store indices corresponding to user-set limits
+		self.indexLimitLow = np.searchsorted(freqAxisFull, valLow, side='right')
+		self.indexLimitHigh = np.searchsorted(freqAxisFull, valHigh, side='left')
+
+		#this process must be done separately for the windowed region's FFT plot.  this is because that plot has fewer points, and hence a different list size/index-frequency mapping.
+		freqAxisZoomedFFT = self.scriptManager_TK_Handle.freqAxisZoomedRegion/self.frequencyUnits
+		self.indexLimitLowZoomedFFT = np.searchsorted(freqAxisZoomedFFT, valLow, side='right')
+		self.indexLimitHighZoomedFFT = np.searchsorted(freqAxisZoomedFFT, valHigh, side='left')
+
+
+	#setNewYLimits applies scaled y-limits onto the frequency graphs of this GUI to improve display quality.  This method loads the y-data within the plotted range, and scales the maximum of the y-axis to be just above the maximal present y-data.
+	def setNewYLimits(self, updateScaleForWindowedFFT=True):
+		#First, handle the axisFourierSpectrumSummed, which is the axis for the cummulative Fourier spectrum.
+		#get the y-data.  Note that data should already be normalized before being plotted.  Hence, retrieving the data from the plotted line should already be normalized
+		PSDFull = self.fourierSpectrumSummedHandle.get_ydata()
+		#narrow y-data to be within plotted range
+		PSDWithinRange = PSDFull[self.indexLimitLow:self.indexLimitHigh]
+		#find the maximum within the plotted range, and set that as the new upper y limit.
+		yLimitHigh = 1.05*np.amax(PSDWithinRange)
+		if(self.plotScale == "linear"):
+			#if the plots are set to linear scaling, can use zero for minimum value
+			self.axisFourierSpectrumSummed.set_ylim(0, yLimitHigh)
+		elif(self.plotScale == "logarithmic"):
+			#if the plots are set to logarithmic scaling, cannot use zero for a bottom value - log(0) is -infinity and using that on a y-scale is not defined.  Need to find low-bound for y-scale.
+			yLimitLow = 0.95*np.amin(PSDWithinRange)
+			self.axisFourierSpectrumSummed.set_ylim(yLimitLow, yLimitHigh)
+
+
+		#repeat for single-trade PSD axis
+		#get the y-data.  Note that data should already be normalized before being plotted.  Hence, retrieving the data from the plotted line should already be normalized
+		PSDFull = self.fourierSpectrumCurrentHandle.get_ydata()
+		#narrow y-data to be within plotted range
+		PSDWithinRange = PSDFull[self.indexLimitLow:self.indexLimitHigh]
+		#find the maximum within the plotted range, and set that as the new upper y limit.
+		yLimitHigh = 1.05*np.amax(PSDWithinRange)
+		if(self.plotScale == "linear"):
+			#if the plots are set to linear scaling, can use zero for minimum value
+			self.axisFourierSpectrumCurrent.set_ylim(0, yLimitHigh)
+		elif(self.plotScale == "logarithmic"):
+			#if the plots are set to logarithmic scaling, cannot use zero for a bottom value - log(0) is -infinity and using that on a y-scale is not defined.  Need to find low-bound for y-scale.
+			yLimitLow = 0.95*np.amin(PSDWithinRange)
+			self.axisFourierSpectrumCurrent.set_ylim(yLimitLow, yLimitHigh)
+
+		#repeat for the FFT plot of the zoomed in region.  This axis is special - the y-limits should only be updated if a hit was detected.  If there were no hits detected, then the zoomed in FFT plot will be just noise.  zooming the y-scale in on noise will produce an undesirable plot, so this should not be done.  To avoid this, an 'if' statement decides whether the y-limits are updated or not.  The method that calls 'setNewYLimits' is expected to supply a boolean statement on whether this axis's scale should be udpated or not.
+		if(updateScaleForWindowedFFT):
+			#get the y-data.  This line object's plotted y-data is NOT normalized.
+			PSDFull = self.zoomedFFTHandle.get_ydata()
+			#narrow y-data to be within plotted range
+			PSDWithinRange = PSDFull[self.indexLimitLowZoomedFFT:self.indexLimitHighZoomedFFT]
+			#find the maximum within the plotted range, and set that as the new upper y limit.
+			yLimitHigh = 1.05*np.amax(PSDWithinRange)
+			if(self.plotScale == "linear"):
+				#if the plots are set to linear scaling, can use zero for minimum value
+				self.axisZoomedFFT.set_ylim(0, yLimitHigh)
+			elif(self.plotScale == "logarithmic"):
+				#if the plots are set to logarithmic scaling, cannot use zero for a bottom value - log(0) is -infinity and using that on a y-scale is not defined.  Need to find low-bound for y-scale.
+				yLimitLow = 0.95*np.amin(PSDWithinRange)
+				self.axisZoomedFFT.set_ylim(yLimitLow, yLimitHigh)
+
+
 
 #########################################
 #methods for handling button and checkbox interface widgets
@@ -108,9 +181,21 @@ class WaveformAnalysisGUI:
 		self.button_updatePlots = tk.Button(self.scriptManager_TK_Handle,text="single plot update", command=self.buttonPressed_updatePlots)
 		self.button_updatePlots.grid(row=18, column=0)
 
+		#create a button to clear the values of the incoherently summed PSD, and reset the array to zero (start accumulating a new one)
+		self.button_quit = tk.Button(self.scriptManager_TK_Handle,text="clear summed PSD", command=self.buttonPressed_clearSummedPSD)
+		self.button_quit.grid(row=20, column=0)
+
+
 		#create a button to exit out of the program
 		self.button_quit = tk.Button(self.scriptManager_TK_Handle,text="finish the current run", command=self.buttonPressed_quit)
-		self.button_quit.grid(row=19, column=0)
+		self.button_quit.grid(row=21, column=0)
+
+		#create a set of radiobuttons for controlling whether frequencies are plotted linearly or logarithmically
+		self.freqScaleRadioButton_intVar = tk.IntVar()
+		tk.Radiobutton(self.scriptManager_TK_Handle, text="linear", variable=self.freqScaleRadioButton_intVar, value=1, command=self.radioButtonPressed_linear).grid(row=20, column=9)
+		tk.Radiobutton(self.scriptManager_TK_Handle, text="logarithmic", variable=self.freqScaleRadioButton_intVar, value=2, command=self.radioButtonPressed_logarithmic).grid(row=21, column=9)
+		#initialize the value and which button is depressed
+		self.freqScaleRadioButton_intVar.set(1)
 
 		#create a checkbox to dictate whether the loop auto-updates the GUI while running.  Can disable auto-updates to prioritize data acquisition and analysis.
 		self.checkboxAutoPlot_boolVar = tk.BooleanVar()#create a necessary variable
@@ -130,6 +215,14 @@ class WaveformAnalysisGUI:
 		print("finishing the program loop")
 		self.scriptManager_TK_Handle.mainLoopFlag = False
 
+	#the button to clear the incoherently summed PSD was pressed.
+	def buttonPressed_clearSummedPSD(self):
+		print("clearing the incoherently summed Power Spectral Density")
+		#get a copy of the old summedPSD, and use it to create a zero-array of the same size.  Use that zero's array to replace the old array
+		oldPSD = self.scriptManager_TK_Handle.summedPSD
+		self.scriptManager_TK_Handle.summedPSD = np.zeros_like(oldPSD)
+
+
 	#manual plot update button was pressed.
 	def buttonPressed_updatePlots(self):
 		print("plots are being updated.")
@@ -145,6 +238,21 @@ class WaveformAnalysisGUI:
 			#checkbox is clicked off.  disable autoplot
 			print("disabling plot auto-updates")
 			self.scriptManager_TK_Handle.flagAutoPlot = False
+
+
+	def radioButtonPressed_linear(self):
+		print("setting frequency plot y-scales to linear")
+		self.axisZoomedFFT.set_yscale("linear")
+		self.axisFourierSpectrumSummed.set_yscale("linear")
+		self.axisFourierSpectrumCurrent.set_yscale("linear")
+		self.plotScale = "linear"
+
+	def radioButtonPressed_logarithmic(self):
+		print("setting frequency plot y-scales to logarithmic")
+		self.axisZoomedFFT.set_yscale("log")
+		self.axisFourierSpectrumSummed.set_yscale("log")
+		self.axisFourierSpectrumCurrent.set_yscale("log")
+		self.plotScale = "logarithmic"
 
 
 
@@ -166,6 +274,10 @@ class WaveformAnalysisGUI:
 		self.entryFreqHigh = tk.Entry(self.scriptManager_TK_Handle)
 		self.entryFreqHigh.grid(row=19, column=9)
 		self.entryFreqHigh.bind('<Return>', self.entryChanged_FreqHighLimit)
+
+		#label the radiobuttons for plotting amplitude either linearly or logarithmically
+		self.labelRadioButtons = tk.Label(self.scriptManager_TK_Handle, text="plot frequency amplitudes:")
+		self.labelRadioButtons.grid(row=20, column=8)
 
 	#command that is executed when the entry field for the lower x limit is updated.
 	#I don't understand tkinter and entries particularly well, but the <Return> binding for entries will call the associated method and pass the key press event.  The call errors if keyPressEvent is not passed in; this method is written to receive the keyPressEvent, but does not do anything with it.
@@ -206,6 +318,26 @@ class WaveformAnalysisGUI:
 
 			#call command to update the xlimits for the plots.  Values do not need to be parsed with the command, the command will be able to access internal variables and submit the current low X and high X.
 			self.updateAxisFreqLimits()
+
+
+######################################################
+# general utility methods
+######################################################
+	
+	#function to perform normalization of an array.  The input is an array to normalize, the returned value is the array after normalization.
+	def normalizeArray(self, arrayToNormalize):
+		#use built-in function norm to return the pythagorean length of a n-dimensional array.  What I mean by this, is each component is squared, summed up, and the value returned is the square root of the sum.
+		normalizationValue = np.linalg.norm(arrayToNormalize)
+		#check that the array isn't empty.
+		if normalizationValue == 0:
+			#if the array norm is zero, do not divide by it. 
+			normedArray = arrayToNormalize
+		else:
+			#else, divide array to normalize it.
+			normedArray = arrayToNormalize/normalizationValue
+		#return value
+		return normedArray
+
 
 
 ######################################################
@@ -313,6 +445,9 @@ class WaveformAnalysisGUI:
 
 		#initialize the internal variables that store the x limits.  These values may be updated later by the user, but need a starting value to reference in the updating methods.
 		self.freqLimitsLow, self.freqLimitsHigh = self.axisFourierSpectrumSummed.get_xlim()
+		#also initiate the cutoff indices.  These values are the indices corresponding to the set frequency cutoffs.  They can be calculated with the method 'findNewIndexLimits' once freqLimitsLow and freqLimitsHigh are set.
+		self.findNewIndexLimits()
+
 
 	#initialization of WaveformAnalysisGUI's object.
 	def __init__(self, tk_RootObject):
@@ -320,7 +455,9 @@ class WaveformAnalysisGUI:
 		#turn on interactive mode.  needed for dynamic plots
 		pyplt.ion()
 		#save a constant value that frequency axis will be divided by.  for example, by storing 1e9 in frequencyUnits, all frequencies will be plotted in units of GHz
-		self.frequencyUnits = 1e9/2*3.14159#the 2pi factor is there to convert from angular frequency to real frequency
+		self.frequencyUnits = 1e9#the 2pi factor is there to convert from angular frequency to real frequency
+		#set the starting scale for FFT plots ("linear" or "logarithmic").
+		self.plotScale = "linear"
 
 		#initialize the figure and axis positions for the GUI plots.  The axes objects are saved to the self. construct and called later as needed.  actual plotting is handled later.
 		self.initFigures()

@@ -6,7 +6,7 @@
 
 import sys
 #set to True if code is running on LeCroy scope.  if proto-testing, set to False.
-runningOnScope = True
+runningOnScope = False
 if(runningOnScope):
 	#select the folder to which data will be written out
 	saveToDirectory = "D:/Waveforms/ScopeCollect/"
@@ -16,6 +16,7 @@ if(runningOnScope):
 	#import libraries meant to acquire data on scope.  commands written to libraries need to be renamed to what they're called in the script.  this is to encourage cross-platform development
 	from lecroyLiveAcquisition_lib import dataIsReadyForReadout as getDataBuffered
 	from lecroyLiveAcquisition_lib import readInDataFromScope_c1 as readInData
+	from lecroyLiveAcquisition_lib import readInDataFromScopeWithTime_c1 as readInDataWithTime
 else:
 	#provide the directory folder from which the libraries can be found
 	sys.path.append("C:/Users/Kevin/Documents/GitHub/DataAcquisition130/libraries")
