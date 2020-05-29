@@ -64,6 +64,7 @@ def calculateOverlapMatrixTOFtoEnergy(energyMin=0, energyMax=30, energySamples=1
 		#at this point, the time bounds have been found.  For time bins that are fully within these bounds, all of their population should contribute to the energy bin (overlapMatrix entry should be set to 1).  For time bins that are not fully within the boundaries, the time bin should be broken up into ratios to estimate how much of the time bin should go into any specific energy bin.  Sum of ratios should be 1.
 
 
+
 	pass
 
 
@@ -88,3 +89,66 @@ def convertTimeToEnergy(timeOfFlight):
 	energy = pow(COMBINED_CONSTANT, 2)/pow(timeOfFlight, 2)
 
 	return energy
+
+
+#calculate an individual row of an overlap matrix, given the shorter and longer boundaries of the row, and the time axis.
+def calculateRow(shorterBoundT, longerBoundT, timeVector):
+	#calculate the time spacing between bins in the timeVector
+	timeSpacing = (timeVector[-1] - timeVector[0])/(len(timeVector) - 1)
+
+	#initialize the row that will be returned as a row of zeros, to be populated as we go.
+	calculatedRow = np.zeros(len(timeSpacing))
+
+	#find the index at which the shorter time boundary crosses the timeVector.  This index will be used to start populating calculatedRow.  Note that numpy.searchsorted requires timeVector to be sorted.  searchsorted also finds the index at which the searched value can be inserted to maintain the sort, not the index that is nearest.
+	shorterBoundInsertIndex = np.searchsorted(timeVector, shorterBoundT)
+
+	#calculate the total quantity of bins that are spanned between the two time boundaries.  This will serve as a 'bank' that countains the amount of population to disperse into calculatedRow
+	sumOfRowEntriesBank = (longerBoundT - shorterBoundT)/timeSpacing
+
+	#find where to begin populating the row.  After finding where to start, extend row population to upper time boundary.
+	if((timeVector[shorterBoundInsertIndex] - timeSpacing/2) >= shorterBoundT):
+		#the population must begin at (shorterBoundInsertIndex - 1)
+		#calculate the max amount that is permisible to insert at the starting bin.  This is the value that will almost certainly be inserted unless longerBoundT falls within the same bin.  This calculation is the offset in time between the shorter boundary and the cutoff in the row index divided by the time spacing.  It is the fraction of bin that is occupied between the time boundary and end of current calculatedRow bin
+		maxAmountToInsertHere = ((timeVector[shorterBoundInsertIndex] - timeSpacing/2) - shorterBoundT)/timeSpacing
+		#check for the exception that the long cutoff time is also in this region of calculatedRow bin.
+		if(sumOfRowEntriesBank <= maxAmountToInsertHere):
+			#if both boundaries are within here, only populate the bin until the bank is exhausted
+			calculatedRow[shorterBoundInsertIndex-1] = sumOfRowEntriesBank
+			sumOfRowEntriesBank -= sumOfRowEntriesBank
+		else:
+			#populate this row entry with the maximal amount allowable (the spacing between the boundary and the transition value between row indices)
+			calculatedRow[shorterBoundInsertIndex-1] = maxAmountToInsertHere
+			sumOfRowEntriesBank -= maxAmountToInsertHere
+
+		#while there is more population left in the bank, keep iterating indices until the bank is exhausted
+		indexNow = shorterBoundInsertIndex
+		while(sumOfRowEntriesBank > 0):
+			if(sumOfRowEntriesBank >= 1):
+				#the long time cutoff boundary will not fall within this index, proceed to fill the entire bin.
+				calculatedRow[indexNow] = 1
+				sumOfRowEntriesBank -= 1
+				indexNow += 1
+			else:
+				#the long cutoff boundary will fall within this index span.  this will be the final bin populated with whatever population (less than 1) left in the bank.
+				calculatedRow[indexNow] = sumOfRowEntriesBank
+				sumOfRowEntriesBank -= sumOfRowEntriesBank
+
+	else:
+		#the population begins at shorterBoundInsertIndex
+
+		#
+		maxAmountToInsertHere = ((timeVector[shorterBoundInsertIndex] + timeSpacing/2) - shorterBoundT)/timeSpacing
+		#check for the exception that the long cutoff time is also in this region of calculatedRow bin.
+		if(sumOfRowEntriesBank <= maxAmountToInsertHere):
+			#if both boundaries are within here, only populate the bin until the bank is exhausted
+			calculatedRow[shorterBoundInsertIndex] = sumOfRowEntriesBank
+			sumOfRowEntriesBank -= sumOfRowEntriesBank
+		else:
+			#populate this row entry with the maximal amount allowable (the spacing between the boundary and the transition value between row indices)
+			calculatedRow[shorterBoundInsertIndex] = maxAmountToInsertHere
+			sumOfRowEntriesBank -= maxAmountToInsertHere
+
+
+
+
+	return calculatedRow
