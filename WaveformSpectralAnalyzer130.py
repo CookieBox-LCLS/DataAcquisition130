@@ -6,7 +6,7 @@
 
 import sys
 #set to True if code is running on LeCroy scope.  if proto-testing, set to False.
-runningOnScope = True
+runningOnScope = False
 if(runningOnScope):
 	#select the folder to which data will be written out
 	saveToDirectory = "D:/Waveforms/ScopeCollect/"
@@ -39,11 +39,6 @@ from waveformDisplayGUI_lib import *
 #consider renaming commands as what they will be used as in the main execution script
 from generalPurposeProcessing_lib import *
 from generalPurposeProcessing_lib import returnWaveformHitsAndPSD as onTheFlyProcessing
-# from generalPurposeProcessing_lib import initializeSummedPSD
-# from generalPurposeProcessing_lib import calculateRiseTimes
-# from generalPurposeProcessing_lib import selectZoomedRegion
-# from generalPurposeProcessing_lib import calculatePSD
-# from generalPurposeProcessing_lib import convertTimeAxisToFrequencies
 #initialize any constants used within the program
 ZOOMED_REGION_BUFFER_WIDTH = 25
 

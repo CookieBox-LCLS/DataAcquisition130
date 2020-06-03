@@ -3,6 +3,7 @@
 ##############################
 
 import numpy as np
+from math import sqrt
 
 #set constants of the time of flight spectrometer
 FLIGHT_LENGTH = 0.4 #in meters
@@ -10,7 +11,7 @@ MASS = 9.1e-31 #in kg
 JOULE_PER_EV = 1.6e-19 #conversion value from 1 eV to Joule
 NANOSECONDS_PER_SECOND = 1e9 #conversion value from 1 sec to ns
 #COMBINED_CONSTANT is calculated here to minimize the number of arithmethic operations performed later.  It represents the constant to be divided by sqrt(Energy) to return time of flight in nanoseconds for an ideal particle on an ideal ToF trajectory.
-COMBINED_CONSTANT = (FLIGHT_LENGTH*sqrt(MASS)/SQRT(2*JOULE_PER_EV))*NANOSECONDS_PER_SECOND
+COMBINED_CONSTANT = (FLIGHT_LENGTH*sqrt(MASS)/sqrt(2*JOULE_PER_EV))*NANOSECONDS_PER_SECOND
 
 
 #calculate the overlap matrix which can be used to multiply a time-axis, to convert the ToF histogram into an energy histogram.  Returns an N (number of energy bins) by M (number of time bins) matrix.
@@ -20,15 +21,26 @@ def calculateOverlapMatrixTOFtoEnergy(energyMin=0, energyMax=30, energySamples=1
 	overlapMatrix = np.zeros((energySamples, timeSamples))
 
 	#create an array representative of the time vector
-	timeVectorNotRegistered = np.linspace(timeMin, timeMax, timeSamples)
+	timeVectorNotRegistered = np.linspace(timeMin, timeMax, timeSamples)*NANOSECONDS_PER_SECOND
 	timeVector = timeVectorNotRegistered - timeZero #subtract time zero.  After this, negative values come before the light pulse, positive values represent time after the light pulse.
 	#compute time steps between adjacent time bins in the time vector
-	timeSpacing = (timeMax - timeMin)/(timeSamples - 1)
+	timeSpacing = NANOSECONDS_PER_SECOND*(timeMax - timeMin)/(timeSamples - 1)
 
-	#create an array representative of the energy vector.
-	energyVector = np.linspace(energyMin, energyMax, energySamples)
-	#compute energy steps between adjacent energy bins in the time vector
-	energySpacing = (energyMax - energyMin)/(energySamples - 1)
+	#creating the energy vector needs some care.  An energy of 0 causes the ToF to be infinite and causes errors down the road.  It is also meaningless to have energy histogram bins that cannot be measured from the time of flight.  For example, a maximum accessible ToF of ~500 nanoseconds implies electron energy of ~2 eV.  Having an energy vector that includes energies below the measurable cutoff axis makes the program more difficult to implement, but is also not worthwhile.  The energy vector thus does not necessarily comply with the user-supplied value.
+	timeMaxAccessible = timeVector[-1]
+	energyMinAccessible = convertTimeToEnergy(timeMaxAccessible)
+	if(energyMin <= energyMinAccessible):
+		#override the user supplied minimum with the lowest accessible energy
+		#create an array representative of the energy vector, with the over-written energy minimum
+		energyVector = np.linspace(energyMinAccessible, energyMax, energySamples)
+		#calculate the energy grid spacing
+		energySpacing = (energyMax - energyMinAccessible)/(energySamples - 1)
+	else:
+		#the user supplied minimum energy is within the system's measurement parameters and can be used as supplied
+		#create an array representative of the energy vector.
+		energyVector = np.linspace(energyMin, energyMax, energySamples)
+		#compute energy steps between adjacent energy bins in the time vector
+		energySpacing = (energyMax - energyMin)/(energySamples - 1)
 
 	#fill in the overlapMatrix one row (one energy value) at a time.  Do it for the number of energy values available.
 	for n in range(energySamples):
@@ -36,17 +48,8 @@ def calculateOverlapMatrixTOFtoEnergy(energyMin=0, energyMax=30, energySamples=1
 		#first, set the energy boundaries that should be integrated across to populate the current energy bin within the histogram.  The energy value in the energy vector is the center of the energy bins, but since actual energy values are continuous, the true bounds should be in between energy bins in the vector.
 		if(n == 0):
 			#handle the special case that this is the first iteration of the loop.
-			if(energyVector[n] == 0):
-				#The lowest energy value supplied may be zero.  This needs to handled specially because a particle with energy zero has infinite time of flight.
-				#for this case, all longer times of flight have to be included.  This is effectively the same as setting a lowest considered energy that is inclusive of the longest time bin
-				
-				#infer a lower energy value that would include this longest time in the conversion.
-				timeMaxAccessible = timeVector[end] + timeSpacing
-				lowerBoundE = convertTimeToEnergy(timeMaxAccessible)
-				upperBoundE = energyVector[n] + energySpacing/2
-			else:
-				lowerBoundE = energyVector[n]
-				upperBoundE = energyVector[n] + energySpacing/2
+			lowerBoundE = energyVector[n]
+			upperBoundE = energyVector[n] + energySpacing/2
 		elif(n == (energySamples - 1)):
 			#handle the special case that this is the last iteration of the loop
 			lowerBoundE = energyVector[n] - energySpacing/2
@@ -60,14 +63,13 @@ def calculateOverlapMatrixTOFtoEnergy(energyMin=0, energyMax=30, energySamples=1
 		longerBoundT = convertEnergyToTime(lowerBoundE)
 		shorterBoundT = convertEnergyToTime(upperBoundE)
 
-
 		#at this point, the time bounds have been found.  For time bins that are fully within these bounds, all of their population should contribute to the energy bin (overlapMatrix entry should be set to 1).  For time bins that are not fully within the boundaries, the time bin should be broken up into ratios to estimate how much of the time bin should go into any specific energy bin.  Sum of ratios should be 1.
+		#performing the nitty-gritty of this calculation is ugly and sub-divided into method 'calculateRow' to make this method more manageable to interpret.
+		overlapMatrix[n, :] = calculateRow(shorterBoundT, longerBoundT, timeVector)
 
 
-
-	pass
-
-
+	#overlapMatrix should be created and fully populated after the completion of the for loop, and can be returned to the calling function
+	return overlapMatrix
 
 
 #the convertEnergyToTime takes an input energy, and returns a time of flight equivalent for a particle of that energy.  The setup parameters should be set at the top of this file.  This method allows for changes to the time of flight to energy conversion equation
@@ -93,11 +95,13 @@ def convertTimeToEnergy(timeOfFlight):
 
 #calculate an individual row of an overlap matrix, given the shorter and longer boundaries of the row, and the time axis.
 def calculateRow(shorterBoundT, longerBoundT, timeVector):
+	#calculate and store the number of elements in the timeVector.
+	numTimes = len(timeVector)
 	#calculate the time spacing between bins in the timeVector
-	timeSpacing = (timeVector[-1] - timeVector[0])/(len(timeVector) - 1)
+	timeSpacing = (timeVector[-1] - timeVector[0])/(numTimes - 1)
 
 	#initialize the row that will be returned as a row of zeros, to be populated as we go.
-	calculatedRow = np.zeros(len(timeSpacing))
+	calculatedRow = np.zeros_like(timeVector)
 
 	#find the index at which the shorter time boundary crosses the timeVector.  This index will be used to start populating calculatedRow.  Note that numpy.searchsorted requires timeVector to be sorted.  searchsorted also finds the index at which the searched value can be inserted to maintain the sort, not the index that is nearest.
 	shorterBoundInsertIndex = np.searchsorted(timeVector, shorterBoundT)
@@ -130,8 +134,12 @@ def calculateRow(shorterBoundT, longerBoundT, timeVector):
 				indexNow += 1
 			else:
 				#the long cutoff boundary will fall within this index span.  this will be the final bin populated with whatever population (less than 1) left in the bank.
-				calculatedRow[indexNow] = sumOfRowEntriesBank
-				sumOfRowEntriesBank -= sumOfRowEntriesBank
+				if(indexNow < numTimes):
+					calculatedRow[indexNow] = sumOfRowEntriesBank
+					sumOfRowEntriesBank -= sumOfRowEntriesBank
+				else:
+					sumOfRowEntriesBank -= sumOfRowEntriesBank
+
 
 	else:
 		#the population begins at shorterBoundInsertIndex
@@ -149,6 +157,19 @@ def calculateRow(shorterBoundT, longerBoundT, timeVector):
 			sumOfRowEntriesBank -= maxAmountToInsertHere
 
 
+		#while there is more population left in the bank, keep iterating indices until the bank is exhausted
+		indexNow = shorterBoundInsertIndex + 1
+		while(sumOfRowEntriesBank > 0):
+			if(sumOfRowEntriesBank >= 1):
+				#the long time cutoff boundary will not fall within this index, proceed to fill the entire bin.
+				calculatedRow[indexNow] = 1
+				sumOfRowEntriesBank -= 1
+				indexNow += 1
+			else:
+				#the long cutoff boundary will fall within this index span.  this will be the final bin populated with whatever population (less than 1) left in the bank.
+				calculatedRow[indexNow] = sumOfRowEntriesBank
+				sumOfRowEntriesBank -= sumOfRowEntriesBank
 
 
+	#calculatedRow should now be completely filled.
 	return calculatedRow

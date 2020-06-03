@@ -182,13 +182,20 @@ class WaveformAnalysisGUI:
 		self.button_updatePlots.grid(row=18, column=0)
 
 		#create a button to clear the values of the incoherently summed PSD, and reset the array to zero (start accumulating a new one)
-		self.button_quit = tk.Button(self.scriptManager_TK_Handle,text="clear summed PSD", command=self.buttonPressed_clearSummedPSD)
-		self.button_quit.grid(row=20, column=0)
-
+		self.button_clearCurrentPSD = tk.Button(self.scriptManager_TK_Handle,text="clear summed PSD", command=self.buttonPressed_clearSummedPSD)
+		self.button_clearCurrentPSD.grid(row=20, column=0)
 
 		#create a button to exit out of the program
 		self.button_quit = tk.Button(self.scriptManager_TK_Handle,text="finish the current run", command=self.buttonPressed_quit)
 		self.button_quit.grid(row=21, column=0)
+
+		#create a button to save the current PSD as a reference.
+		self.button_saveReference = tk.Button(self.scriptManager_TK_Handle,text="save PSD as reference", command=self.buttonPressed_savePSDReference)
+		self.button_saveReference.grid(row=20, column=5)
+
+		#create a button to clear all previously saved references
+		self.button_clearReferences = tk.Button(self.scriptManager_TK_Handle,text="clear reference PSD's", command=self.buttonPressed_clearPSDReferences)
+		self.button_clearReferences.grid(row=21, column=5)
 
 		#create a set of radiobuttons for controlling whether frequencies are plotted linearly or logarithmically
 		self.freqScaleRadioButton_intVar = tk.IntVar()
@@ -214,6 +221,24 @@ class WaveformAnalysisGUI:
 	def buttonPressed_quit(self):
 		print("finishing the program loop")
 		self.scriptManager_TK_Handle.mainLoopFlag = False
+
+	#user asked the current PSD to be saved as a reference
+	def buttonPressed_savePSDReference(self):
+		#change the current summedPSD handle into a reference and move it into the reference list
+		referencePSD = self.fourierSpectrumSummedHandle
+		self.referencesList.append(referencePSD)
+		#the reference handle has now been preserved.  overwrite the active handle name with the current PSD.  User can then clear this new plot while keeping the old reference.
+		self.fourierSpectrumSummedHandle, = self.axisFourierSpectrumSummed.plot(self.scriptManager_TK_Handle.frequencyAxisNondegenerate/self.frequencyUnits, self.scriptManager_TK_Handle.summedPSD)
+
+	#user hit the button to clear all previously saved reference PSD's
+	def buttonPressed_clearPSDReferences(self):
+		numReferences = len(self.referencesList)
+		#go through each individual line object and remove each one.
+		for i in range(numReferences):
+			#remove the current line to be removed from the list
+			lineToRemoveNow = self.referencesList.pop(0)
+			#delete the line object
+			lineToRemoveNow.remove()
 
 	#the button to clear the incoherently summed PSD was pressed.
 	def buttonPressed_clearSummedPSD(self):
@@ -458,6 +483,8 @@ class WaveformAnalysisGUI:
 		self.frequencyUnits = 1e9#the 2pi factor is there to convert from angular frequency to real frequency
 		#set the starting scale for FFT plots ("linear" or "logarithmic").
 		self.plotScale = "linear"
+		#initialize a list that will be used to store plot line handles for references.
+		self.referencesList = []
 
 		#initialize the figure and axis positions for the GUI plots.  The axes objects are saved to the self. construct and called later as needed.  actual plotting is handled later.
 		self.initFigures()

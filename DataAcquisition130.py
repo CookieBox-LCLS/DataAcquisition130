@@ -7,7 +7,7 @@ import sys
 
 
 #set to True if code is running on LeCroy scope.  if proto-testing, set to False.
-runningOnScope = True
+runningOnScope = False
 if(runningOnScope):
 	#select the folder to which data will be written out
 	saveToDirectory = "D:/Waveforms/ScopeCollect/"
@@ -17,6 +17,7 @@ if(runningOnScope):
 	#import libraries meant to acquire data on scope.  commands written to libraries need to be renamed to what they're called in the script.  this is to encourage cross-platform development
 	from lecroyLiveAcquisition_lib import dataIsReadyForReadout as getDataBuffered
 	from lecroyLiveAcquisition_lib import readInDataFromScope_c1 as readInData
+	from lecroyLiveAcquisition_lib import readInDataFromScopeWithTime_c1 as readInDataWithTime
 else:
 	#provide the directory folder from which the libraries can be found
 	sys.path.append("C:/Users/Kevin/Documents/GitHub/DataAcquisition130/libraries")
@@ -26,6 +27,7 @@ else:
 	#import libraries meant to simulate data acquisition with pre-acquired .trc files.  commands written to libraries need to be renamed to what they're called in the script.  this is to encourage cross-platform development
 	from simulatingWithCollectedData_lib import dataBufferRandomSimulation as getDataBuffered
 	from simulatingWithCollectedData_lib import readInDataFromFolder as readInData
+	from simulatingWithCollectedData_lib import readInDataFromFolderWithTime as readInDataWithTime
 
 
 #import needed libraries
@@ -42,10 +44,16 @@ from generalPurposeProcessing_lib import initializeHistogram
 from generalPurposeProcessing_lib import addHitsToHistogram
 from generalPurposeProcessing_lib import addToHitRateDistribution
 from generalPurposeProcessing_lib import updateHitRateRunningWindow
+from TOFtoEnergyConversion_lib import calculateOverlapMatrixTOFtoEnergy
 #initialize some constants used in program
 HITRATEMAX = 50
 HITRATE_RUNNINGAVERAGE_WINDOWWIDTH = 1000
 NUMBER_ITERATIONS_BETWEEN_PLOT = 9
+#declare the energy vector parameters for the energy histogram
+ENERGYMIN = 0
+ENERGYMAX = 30
+ENERGYSAMPLESDEFAULT = 600
+TIMEZERODEFAULT = 0 #MUST BE IN NANOSECONDS.
 
 
 class MainScriptManager_TK(tk.Tk):
@@ -86,14 +94,28 @@ class MainScriptManager_TK(tk.Tk):
 			#write out all acquired data
 			self.rawDataToWriteArray = writeOut(self.fileNameNowFull, self.rawDataToWriteArray)
 
+			#check if the user has triggered a recalculation of the overlap matrix or not.  changes the overlap matrix values from the GUI will cause the GUI to raise the flag 'flagRecalculateOverlapMatrix'
+			if(self.flagRecalculateOverlapMatrix):
+				self.updateOverlapMatrixNewParameters()
+				#overlap matrix has been recalculated.  set the flag back down.
+				self.flagRecalculateOverlapMatrix = False
+
 			#update the plots to show the full data set, including the newly collected value
 			if(self.flagAutoPlot):
 				self.GUIHandle.updatePlotsMaster(self.histogramCollected, self.lastTrace, self.lastHitIndices, self.hitRateDistribution, self.hitRateMonitoringWindow)
 			else:
 				self.update()
 
+	#this method handles calls to update the overlap matrix if new values for parameters exist.  The method isn't much, but it makes the code within the main loop more legible by masking some of the setup needed to calculate the overlap matrix.
+	def updateOverlapMatrixNewParameters(self):
+		#the user can alter time zero and energy samples/energy bins in the program.  When those values are updated, the GUI will re-write the respective stored variables and initiate a change in main loop logic to trigger this call.
 
-
+		#load the time parameters needed to calculate the overlap matrix
+		TIMEMIN = min(self.timeValuesFull)
+		TIMEMAX = max(self.timeValuesFull)
+		TIMESAMPLES = len(self.timeValuesFull)
+		#make the call to recalcualte the overlap matrix.
+		self.overlapMatrix = calculateOverlapMatrixTOFtoEnergy(energyMin=ENERGYMIN, energyMax=ENERGYMAX, energySamples=self.energyBins, timeMin = TIMEMIN, timeMax=TIMEMAX, timeSamples=TIMESAMPLES, timeZero=self.timeZero)
 
 	#postConstructionClassInitialization is intended to be the __init__ constructor - but it cannot be used as an init, since tk.Tk() seems to require its own initializer to be run for proper tk usage.  This contruction performs variable initialization, and runs the first step of data acquisition to help construct other objects needed for program execution.
 	def postConstructionClassInitialization(self):
@@ -102,6 +124,8 @@ class MainScriptManager_TK(tk.Tk):
 		self.mainLoopFlag = True
 		#flagAutoPlot is a boolean flag that can be changed by the user through the GUI to enable/disable auto plotting in the main loop
 		self.flagAutoPlot = True
+		#initialize a flag that can be used to control the main logic loop to re-calculate the overlap matrix upon user trigger in the GUI class.
+		self.flagRecalculateOverlapMatrix = False
 		#variable 'rawDataToWriteArray' is the buffer that stores data that needs to be written out
 		self.rawDataToWriteArray = []
 		#initialize histogram that'll be used to keep track of the hit rate distribution
@@ -118,7 +142,7 @@ class MainScriptManager_TK(tk.Tk):
 		while not entryLoopCompleted:
 			if getDataBuffered():
 				#collect a first trace, and put it into the data array.  this needs to be done to see what the data looks like.
-				newRawData = readInData()
+				newRawData, self.timeValuesFull = readInDataWithTime()
 				#perform on the fly processing for the new data.  the expected return is 'rawData', which is the data that needs to be written to the file.  rawData can be identical to the input value 'newRawData'.  hitIndices contains the index of all the hits found in 'newRawData' with a CFD
 				rawData, hitIndices = onTheFlyProcessing(newRawData)
 				#send rawData to array that is waiting to be written out
@@ -134,6 +158,15 @@ class MainScriptManager_TK(tk.Tk):
 
 				#take the first sample data, and use it to generate a new file.  generateNewFileAndHeader also creates a header file that contains information regarding the size of an individual data chunk.  data from 'rawDataToWriteArray' is written out, and an empty array is returned to take its place
 				self.rawDataToWriteArray = generateNewFileAndHeader(self.fileNameNowFull, self.rawDataToWriteArray)
+
+				#create initial parameters to calculate an overlap matrix.
+				TIMEMIN = min(self.timeValuesFull)
+				TIMEMAX = max(self.timeValuesFull)
+				TIMESAMPLES = len(self.timeValuesFull)
+				self.energyBins = ENERGYSAMPLESDEFAULT
+				self.timeZero = TIMEZERODEFAULT
+				#calculate the initial overlap matrix.
+				self.overlapMatrix = calculateOverlapMatrixTOFtoEnergy(energyMin=ENERGYMIN, energyMax=ENERGYMAX, energySamples=self.energyBins, timeMin = TIMEMIN, timeMax=TIMEMAX, timeSamples=TIMESAMPLES, timeZero=self.timeZero)
 
 				#initialize the visual element of the program.  The class 'DataAcqGUI' is designed to manage the GUI's graphics, and it requires the current tkinter object to link the GUI button presses with this loop.  it is also required that self.histogramCollected is created, because some of the plots will need a 'dummy' histogram to make plots and initialize line objects.  DataAcqGUI constructor will call on the current object's histogram itself.
 				self.GUIHandle = DataAcqGUI(self)
