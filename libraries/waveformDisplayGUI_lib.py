@@ -377,45 +377,45 @@ class WaveformAnalysisGUI:
 
 		#layout the axes within the figure.  control axis size and distribution by the variables here.
 		#spacing variables.  For this method, 'horizontal seam' is a vertical line that spaces two plots across the horizontal axis.  the 'horizontal' in 'horizontalSeam' denotes the horizontal position of the vertical seam.  Likewise, a 'vertical seam' is a horizontal separation that separates the vertical axis.
-		horizontalSeam = 0.5
-		verticalSeamHigh = 0.66
-		verticalSeamLow = 0.34
+		horizontalSeamLeft = 0.34
+		horizontalSeamRight = 0.66
+		verticalSeam = 0.5
 		horizontalSpacing = 0.08
 		verticalSpacing = 0.08
 		##assign positions to individual plots
 		#zoomed in trace
 		xMinZoomedTrace = horizontalSpacing
-		widthZoomedTrace = (horizontalSeam - horizontalSpacing/2) - xMinZoomedTrace
-		yMinZoomedTrace =  verticalSeamHigh + verticalSpacing/2
+		widthZoomedTrace = (horizontalSeamLeft - horizontalSpacing/2) - xMinZoomedTrace
+		yMinZoomedTrace =  verticalSeam + verticalSpacing/2
 		heightZoomedTrace = (1 - verticalSpacing/2) - yMinZoomedTrace
 		#full scale trace
-		xMinFullTrace = horizontalSeam + horizontalSpacing/2
-		widthFullTrace = (1 - horizontalSpacing/2) - xMinFullTrace
-		yMinFullTrace =  verticalSeamHigh + verticalSpacing/2
+		xMinFullTrace = horizontalSeamLeft + horizontalSpacing/2
+		widthFullTrace = (horizontalSeamRight - horizontalSpacing/2) - xMinFullTrace
+		yMinFullTrace =  verticalSeam + verticalSpacing/2
 		heightFullTrace = (1 - verticalSpacing/2) - yMinFullTrace
 		#FFT of zoomed in region
 		xMinZoomedFFT = horizontalSpacing
-		widthZoomedFFT = (horizontalSeam - horizontalSpacing/2) - xMinZoomedFFT
-		yMinZoomedFFT = verticalSeamLow + verticalSpacing/2
-		heightZoomedFFT = (verticalSeamHigh - verticalSpacing/2) - yMinZoomedFFT
+		widthZoomedFFT = (horizontalSeamLeft - horizontalSpacing/2) - xMinZoomedFFT
+		yMinZoomedFFT = verticalSpacing
+		heightZoomedFFT = (verticalSeam - verticalSpacing/2) - yMinZoomedFFT
 		#distribution of rise times
-		xMinDistRiseTimes = horizontalSeam + horizontalSpacing/2
-		widthDistRiseTimes = (1 - horizontalSpacing/2) - xMinFullTrace
-		yMinDistRiseTimes = verticalSeamLow + verticalSpacing/2
-		heightDistRiseTimes = (verticalSeamHigh - verticalSpacing/2) - yMinDistRiseTimes
+		xMinDistRiseTimes = horizontalSeamRight + horizontalSpacing/2
+		widthDistRiseTimes = (1 - horizontalSpacing/2) - xMinDistRiseTimes
+		yMinDistRiseTimes = verticalSeam + verticalSpacing/2
+		heightDistRiseTimes = (1 - verticalSpacing/2) - yMinDistRiseTimes
 		#power spectrum of this current trace
-		xMinFourierSpectrumCurrent = horizontalSpacing
-		widthFourierSpectrumCurrent = (horizontalSeam - horizontalSpacing/2) - xMinFourierSpectrumCurrent
-		yMinFourierSpectrumCurrent = verticalSpacing/2
-		heightFourierSpectrumCurrent = (verticalSeamLow - verticalSpacing/2) - yMinFourierSpectrumCurrent
+		xMinFourierSpectrumCurrent = horizontalSeamLeft + horizontalSpacing/2
+		widthFourierSpectrumCurrent = (horizontalSeamRight - horizontalSpacing/2) - xMinFourierSpectrumCurrent
+		yMinFourierSpectrumCurrent = verticalSpacing
+		heightFourierSpectrumCurrent = (verticalSeam - verticalSpacing/2) - yMinFourierSpectrumCurrent
 		#combined power spectrum
-		xMinFourierSpectrumSummed = horizontalSeam + horizontalSpacing/2
-		widthFourierSpectrumSummed = (1 - horizontalSpacing/2) - xMinFullTrace
-		yMinFourierSpectrumSummed = verticalSpacing/2
-		heightFourierSpectrumSummed = (verticalSeamLow - verticalSpacing/2) - yMinFourierSpectrumSummed
+		xMinFourierSpectrumSummed = horizontalSeamRight + horizontalSpacing/2
+		widthFourierSpectrumSummed = (1 - horizontalSpacing/2) - xMinFourierSpectrumSummed
+		yMinFourierSpectrumSummed = verticalSpacing
+		heightFourierSpectrumSummed = (verticalSeam - verticalSpacing/2) - yMinFourierSpectrumSummed
 
 		#create the figure and axis, as prescribed by the position distributions above
-		self.figHandle = pyplt.figure(figsize=(9,8))
+		self.figHandle = pyplt.figure(figsize=(9,6))
 		self.axisZoomedTrace = self.figHandle.add_axes([xMinZoomedTrace, yMinZoomedTrace, widthZoomedTrace, heightZoomedTrace])
 		self.axisFullTrace = self.figHandle.add_axes([xMinFullTrace, yMinFullTrace, widthFullTrace, heightFullTrace])
 		self.axisZoomedFFT = self.figHandle.add_axes([xMinZoomedFFT, yMinZoomedFFT, widthZoomedFFT, heightZoomedFFT])

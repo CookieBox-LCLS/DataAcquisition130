@@ -20,12 +20,12 @@ class DataAcqGUI:
 		self.currentHistoBinWidth = 1
 
 	#This is a method to initialize the energy histogram axis and all relevant components.
-	def plotInitEnergyHistogram(self, histogramTime, overlapMatrix):
+	def plotInitEnergyHistogram(self, histogramTime, overlapMatrix, energyVector):
 		#calculate the initial energy histogram
 		energyHistogram = np.matmul(overlapMatrix, histogramTime)
 
 		#plot the initial histogram, save the output handle
-		self.energyHistogramHandle, = self.axisEnergy.plot(energyHistogram)
+		self.energyHistogramHandle, = self.axisEnergy.plot(energyVector, energyHistogram)
 		#set the y-limits for this axis
 		yLimitHigh = np.amax(energyHistogram) + 1
 		self.axisEnergy.set_ylim(0, yLimitHigh)
@@ -127,20 +127,12 @@ class DataAcqGUI:
 	#update the raw trace plot with latest trace provided by the execution loop
 	def updateTrace(self, newTrace, traceHitIndices):
 		self.rawTraceHandle.set_ydata(newTrace)
-		#get the y-values for the hits.  Will need special handling for the case of no hits.  This is because an empty hit indices ([]) list will cause an error when fed in as a parameter into the values list, newTrace.
-		if len(traceHitIndices) == 0:
-			#special case of zero hits found in trace.
-			traceHitValues = []
-			#remove the previous scatter plot
-			self.axisRawTrace.collections[0].remove()
-			#plot an empty scatter placeholder, so that next call to collections[0].remove() does not fail
-			self.axisRawTrace.scatter(traceHitIndices, traceHitValues, c='r')
-		else:
-			traceHitValues = newTrace[traceHitIndices]
-			#remove the previous scatter plot
-			self.axisRawTrace.collections[0].remove()
-			#plot the scatter points for the current trace
-			self.axisRawTrace.scatter(traceHitIndices, traceHitValues, c='r')
+		#get the y-values for the hits.  This has not yet worked successfully on the oscilloscope, because if traceHitIndices is an empty list, a list is referenced with an empty list.  Current attempted solution is to convert acquired data into numpy arrays immediately, but this is yet to be tried experimentally.
+		traceHitValues = newTrace[traceHitIndices]
+		#remove the previous scatter plot
+		self.axisRawTrace.collections[0].remove()
+		#plot the scatter points for the current trace
+		self.axisRawTrace.scatter(traceHitIndices, traceHitValues, c='r')
 
 	#update the hit distribution plot with newHitRateDist.  updates the y-axis as well to best image the distribution.
 	def updateHitRateDist(self, newHitRateDist):
@@ -553,7 +545,7 @@ class DataAcqGUI:
 		#initialize the plot of the hit rate distribution
 		self.plotInitHitRateDistribution(self.scriptManager_TK_Handle.hitRateDistribution)
 		#initialize the plot of the energy histogram distribution
-		self.plotInitEnergyHistogram(self.scriptManager_TK_Handle.histogramCollected, self.scriptManager_TK_Handle.overlapMatrix)
+		self.plotInitEnergyHistogram(self.scriptManager_TK_Handle.histogramCollected, self.scriptManager_TK_Handle.overlapMatrix, self.scriptManager_TK_Handle.energyVector)
 
 		#pack the figure onto the canvas
 		self.canvasHandle = FigureCanvasTkAgg(self.figHandle, master=self.scriptManager_TK_Handle)

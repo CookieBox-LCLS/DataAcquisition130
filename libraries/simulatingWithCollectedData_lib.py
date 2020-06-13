@@ -2,6 +2,8 @@ import random
 import glob
 import lecroyparser
 
+import numpy as np
+
 ###########################################
 def dataBufferRandomSimulation():
 	return random.getrandbits(1)

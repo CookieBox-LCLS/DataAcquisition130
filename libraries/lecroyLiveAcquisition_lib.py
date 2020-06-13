@@ -10,7 +10,9 @@ def dataIsReadyForReadout():
 #read in data from channel 1
 def readInDataFromScope_c1():
 	newWaveform = app.Acquisition.C1.Out.Result.DataArray
-	return newWaveform
+	#convert to numpy array before being returned out
+	newWaveFormAsArray = np.array(newWaveform)
+	return newWaveFormAsArray
 
 #read in data from channel 1 and also get the time axis
 def readInDataFromScopeWithTime_c1():
@@ -21,5 +23,7 @@ def readInDataFromScopeWithTime_c1():
 	numSteps = app.Acquisition.C1.Out.Result.Samples
 	#numpy.arange creates an array of integers up until its argument.  For example, np.arange(4) will yield the array: [0, 1, 2, 3].  This is used, in conjunction with the time steps between each sample, to produce a replica of the waveform's time axis.
 	timeAxis = timeSpacing * np.arange(numSteps)
+	#convert to numpy array before being returned out
+	newWaveFormAsArray = np.array(newWaveform)
 
-	return newWaveform, timeAxis
+	return newWaveFormAsArray, timeAxis

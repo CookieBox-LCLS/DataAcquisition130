@@ -69,7 +69,7 @@ def calculateOverlapMatrixTOFtoEnergy(energyMin=0, energyMax=30, energySamples=1
 
 
 	#overlapMatrix should be created and fully populated after the completion of the for loop, and can be returned to the calling function
-	return overlapMatrix
+	return overlapMatrix, energyVector
 
 
 #the convertEnergyToTime takes an input energy, and returns a time of flight equivalent for a particle of that energy.  The setup parameters should be set at the top of this file.  This method allows for changes to the time of flight to energy conversion equation

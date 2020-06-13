@@ -7,7 +7,7 @@ import sys
 
 
 #set to True if code is running on LeCroy scope.  if proto-testing, set to False.
-runningOnScope = False
+runningOnScope = True
 if(runningOnScope):
 	#select the folder to which data will be written out
 	saveToDirectory = "D:/Waveforms/ScopeCollect/"
@@ -115,7 +115,7 @@ class MainScriptManager_TK(tk.Tk):
 		TIMEMAX = max(self.timeValuesFull)
 		TIMESAMPLES = len(self.timeValuesFull)
 		#make the call to recalcualte the overlap matrix.
-		self.overlapMatrix = calculateOverlapMatrixTOFtoEnergy(energyMin=ENERGYMIN, energyMax=ENERGYMAX, energySamples=self.energyBins, timeMin = TIMEMIN, timeMax=TIMEMAX, timeSamples=TIMESAMPLES, timeZero=self.timeZero)
+		self.overlapMatrix, self.energyVector = calculateOverlapMatrixTOFtoEnergy(energyMin=ENERGYMIN, energyMax=ENERGYMAX, energySamples=self.energyBins, timeMin = TIMEMIN, timeMax=TIMEMAX, timeSamples=TIMESAMPLES, timeZero=self.timeZero)
 
 	#postConstructionClassInitialization is intended to be the __init__ constructor - but it cannot be used as an init, since tk.Tk() seems to require its own initializer to be run for proper tk usage.  This contruction performs variable initialization, and runs the first step of data acquisition to help construct other objects needed for program execution.
 	def postConstructionClassInitialization(self):
@@ -166,7 +166,7 @@ class MainScriptManager_TK(tk.Tk):
 				self.energyBins = ENERGYSAMPLESDEFAULT
 				self.timeZero = TIMEZERODEFAULT
 				#calculate the initial overlap matrix.
-				self.overlapMatrix = calculateOverlapMatrixTOFtoEnergy(energyMin=ENERGYMIN, energyMax=ENERGYMAX, energySamples=self.energyBins, timeMin = TIMEMIN, timeMax=TIMEMAX, timeSamples=TIMESAMPLES, timeZero=self.timeZero)
+				self.overlapMatrix, self.energyVector = calculateOverlapMatrixTOFtoEnergy(energyMin=ENERGYMIN, energyMax=ENERGYMAX, energySamples=self.energyBins, timeMin = TIMEMIN, timeMax=TIMEMAX, timeSamples=TIMESAMPLES, timeZero=self.timeZero)
 
 				#initialize the visual element of the program.  The class 'DataAcqGUI' is designed to manage the GUI's graphics, and it requires the current tkinter object to link the GUI button presses with this loop.  it is also required that self.histogramCollected is created, because some of the plots will need a 'dummy' histogram to make plots and initialize line objects.  DataAcqGUI constructor will call on the current object's histogram itself.
 				self.GUIHandle = DataAcqGUI(self)
