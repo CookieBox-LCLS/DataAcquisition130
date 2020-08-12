@@ -212,30 +212,30 @@ def aveGattonCFD_main(dataIn_Amplitude):
 ##################################################
 #Andrei CFD section
 ##################################################
-def andreiKamalovCFD_main(dataIn_Amplitude):
+def andreiKamalovCFD_main(dataIn):
 	#initialize 'hitIndices', which will contain the indices of any hits found in the trace supplied as 'dataIn_Amplitude'
 	hitIndices = []
 
 	#subtract a mean offset
-	dataIn_Amplitude -= np.mean(dataIn_Amplitude)
+	dataIn_Centered = dataIn - np.mean(dataIn)
 	#calculate the variance of the trace
-	sigma = np.std(dataIn_Amplitude)
+	sigma = np.std(dataIn_Centered)
 
 	#calculate an upper threshold above which to look for peaks in the raw trace
 	threshold = 4*sigma
 	#return the indices for which the raw data exceeds the threshold.
-	dataIn_AboveThreshold_Indices = np.flatnonzero(dataIn_Amplitude > threshold)
+	dataIn_AboveThreshold_Indices = np.flatnonzero(dataIn_Centered > threshold)
 
 	#if it's likely that there are zero hits in this trace, there's no need to perform the remainder of the CFD processing.
 	if(len(dataIn_AboveThreshold_Indices) == 0):
 		#create an empty array of found hits
 		#NOT IMPLEMENTED YET BUT SHOULD BE
-		return dataIn_Amplitude, hitIndices
+		return dataIn_Centered, hitIndices
 
 
 	#convolve the raw data with a triangular filter
 	convFilterLength = 35#this must be an odd value
-	convolvedData = convoluteByTriangle(dataIn_Amplitude, convFilterLength)
+	convolvedData = convoluteByTriangle(dataIn_Centered, convFilterLength)
 
 	#add up an inverse and an offset.  this is the type of approach an electronic CFD performs.
 	lengthTrace = len(convolvedData)
@@ -261,7 +261,7 @@ def andreiKamalovCFD_main(dataIn_Amplitude):
 		if(validSeriesFlag):
 			hitIndices.append(hitIndex)
 
-	#there are now a set of found hitIndices.  but these are in respect to the processed comparedTrace.  need to un-shift the indices to represent hits for the actual trace (dataIn_Amplitude)
+	#there are now a set of found hitIndices.  but these are in respect to the processed comparedTrace.  need to un-shift the indices to represent hits for the actual trace (dataIn_Centered)
 	hitIndices = [x + indicesShift for x in hitIndices]
 
 	#control whether to do diagnostic plots or not
@@ -276,12 +276,12 @@ def andreiKamalovCFD_main(dataIn_Amplitude):
 				pyplt.scatter(hitIndices[ind].item(), convolvedData[hitIndices[ind].item()])
 			pyplt.show()
 
-			pyplt.plot(range(lowBound, highBound), dataIn_Amplitude[lowBound:highBound])
+			pyplt.plot(range(lowBound, highBound), dataIn_Centered[lowBound:highBound])
 			if (len(hitIndices) > 0):
-				pyplt.scatter(hitIndices[ind].item(), dataIn_Amplitude[hitIndices[ind].item()])
+				pyplt.scatter(hitIndices[ind].item(), dataIn_Centered[hitIndices[ind].item()])
 			pyplt.show()
 
-	return dataIn_Amplitude, hitIndices
+	return dataIn_Centered, hitIndices
 
 #####################################################################################
 #support methods for andrei's CFD

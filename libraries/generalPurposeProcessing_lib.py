@@ -1,6 +1,6 @@
 import sys
 import math
-from scipy.fft import fft
+from scipy import fft
 import numpy as np
 #select which CFD to use to process data
 from CFD_lib import andreiKamalovCFD_main as CFD
