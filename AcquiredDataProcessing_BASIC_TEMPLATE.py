@@ -65,8 +65,9 @@ while moreToRead:
 	elif(len(traceNow) < traceDataSize/savedDataTypeSizeInBytes):
 		print("A trace was read in with a byte size that is not equal to the size prescribed in the header file.")
 	else:
-		#a normal, complete trace has been extracted.  This section may be used to process traces as desired by user.
-		#perform processing similar to that done on the o-scope
+		#a normal, complete trace has been extracted.  This section may be used to process traces as desired by user.  New traces will be fed into this region until they are exhausted.  The variable for the current new trace is 'traceNow'.  Please note that this is within a loop, so it may be good to save to variables, and access the variables after the present while loop is exhausted.
+
+
 		pass
 
 

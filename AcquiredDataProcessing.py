@@ -30,11 +30,41 @@ folderName = "C:/Users/andre/Desktop/100V_lowGas_tightIris/"
 
 
 
+#################
+#HELPER METHODS SECTION
+#################
+
+	#bin a raw histogram into the bin width specified by the user.  return a plot line's y-values to resemble histogram blocks, but be of the same length as the input variable 'rawHistogram'
+	def calculateBinnedHistogramTrace(self, rawHistogram, binWidth):
+		lenFullTrace = rawHistogram.size
+		#calculate the number of complete bins that rawHistogram can be binned into, for given binWidth
+		numberCompleteBins = int(np.floor(lenFullTrace/binWidth))
+		#reshape as much of the rawHistogram trace as possible
+		lengthToBeReshaped = numberCompleteBins*binWidth
+		reshapedTraceArray = np.reshape(rawHistogram[0:lengthToBeReshaped], [numberCompleteBins, binWidth])
+		#use the reshaped trace to simplify calculation of bins.  sum up along axis 1 to sum across the bin width dimension.  in other words, sum up the components of a single bin with width binWidth.
+		sumsOfBins = np.sum(reshapedTraceArray, 1)
+
+		#using the binnedTrace, and the unutilized tail end of rawHistogram, stich together an array of the same dimension as rawHistogram, but with values that represent binned data.
+		binnedPortionOfTrace = np.repeat(sumsOfBins, binWidth)#account for the binned portion of the trace.
+		#stitch on any part of the trace not used in the binning
+		unusedTraceTail = rawHistogram[lengthToBeReshaped:lenFullTrace]
+		binnedTrace = np.concatenate((binnedPortionOfTrace, unusedTraceTail))#need argument of method to be a tuple of the two arrays to be stitched together.
+
+		return binnedTrace
+
+
+
+
+#################
+#START OF SCRIPT
+#################
+
 
 #################
 #LOAD IN DATA
 #################
-#this section loads in the raw data and prepares everything necessary for data extraction.  USER MUST WRITE IN FILE AND FOLDER NAMES IN THE BLOCK ABOVE THIS COMMENT.
+#this section loads in the raw data and prepares everything necessary for data extraction.  USER MUST WRITE IN FILE AND FOLDER NAMES IN THE APPROPRIATE BLOCK SOMEWHERE IN THE HEADER
 
 #set up to load binary data in.  use "rb" to indicate read only from binary for data file
 dataFile = open(folderName + dataFileName, "rb")
