@@ -1,5 +1,6 @@
 import sys
 import math
+import os
 from scipy import fft
 import numpy as np
 #select which CFD to use to process data
@@ -207,29 +208,29 @@ def writeOutRawData(fileNameNowFull, rawDataToWrite):
 ###########################################
 #method 'generateNewFileAndHeader' is designed to look at a sampling of data and get it's binary data size, and output it to the file's associated header.txt file.  It then creates the actual data file and saves the first bit of sampled data to it, so as to not waste it.
 def generateNewFileAndHeader(fileNameNow, rawDataToWriteArray):
-	####figure out the header file first
-	fileNameHeader = fileNameNow + '_HEADER.txt'
-	#create and open the file that will be used to store processed data.
-	file = open(str(fileNameHeader), 'w')
-	#there should only be one entry here - use it to gauge length of write out, and create a header with that information.
+	#first, process the data that needs to be written, and then write it to the binary file that will house all of the data for this run
+
+	#there should only be one entry here - use it to gauge length of write out.  Header writeout will be determined by that information.
 	toWriteList = rawDataToWriteArray.pop(0)
 	#the popped value is likely a list.  convert it to a numpy array to optimize writeout speed.
 	toWrite = np.asarray(toWriteList)
-	#get binary size of data sample
-	binaryDataSize = sys.getsizeof(toWrite)
-	#output size of binary data
-	file.write("The size of an individual bit of binary data is: " + str(binaryDataSize) + "\n")
-	#close file
-	file.close()
-
-	#####also save the sampled binary data to the real file so as to not waste it.
+	#save the sampled binary data to the run output file
 	#open the file to which post-on-the-fly-processed data is written.
 	file = open(str(fileNameNow), 'ab')
 	#the portion of binary data that needs saving is the single trace pop'd off of the array earlier.
 	toWrite.tofile(file)
-	#keep alternate method (below) commented out in case .tofile still fails
-	#file.write(toWrite)
-	
+	#close appending to fileNameNow
+	file.close()
+
+	####figure out the header file, now that binary file has been processed
+	fileNameHeader = fileNameNow + '_HEADER.txt'
+	#create and open the file that will be used to store processed data.
+	file = open(str(fileNameHeader), 'w')
+	#get binary size of data sample.  This is done by looking at file size of the recently created binary file, which should only have 1 trace in it so far.
+	binaryDataSize = os.stat(str(fileNameNow)).st_size
+	#output size of binary data
+	file.write("The size of an individual trace, in bytes, within the binary file is: " + str(binaryDataSize) + "\n")
+	#close file
 	file.close()
 
 	#the empty array is returned so that the loop that called this function knows that there is nothing else to read out of the array.
