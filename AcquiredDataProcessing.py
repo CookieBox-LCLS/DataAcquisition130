@@ -19,14 +19,47 @@ savedDataTypeSizeInBytes = 8
 #denote the data type to interpret the binary data with.  Should be float64, unless trace files are worked with.  for .trc files, float32 seems to be expected.
 dt = np.dtype("float64")
 
-#write in data file names
-dataFileName = "2020_08_08_18_54_00"
-headerFileName = dataFileName + "_HEADER.txt"
 #write in directory that contains data files.  please keep the slash at the end to indicate being inside the folder.
-folderName = "C:/Users/andre/Desktop/100V_lowGas_tightIris/"
+#also write in the actual data file name.  Header file is inferred from data file name.
+
+# #40V data
+#folderName = "C:/Andrei/ScopeCollect/toKeep/ATI_at_40V/"
+#dataFileName = "2020_08_08_17_19_34"
+
+# #60V data
+#folderName = "C:/Andrei/ScopeCollect/toKeep/60V/"
+#dataFileName = "2020_08_08_17_30_13"
+
+# #100V data
+#folderName = "C:/Users/andre/Desktop/100V_lowGas_tightIris/"
+#dataFileName = "2020_08_08_18_54_00"
+
+ #pre-Beam movement walkway
+folderName = "C:/Andrei/ScopeCollect/pre_movement/walkwaySide/"
+dataFileName = "2020_08_08_20_17_27"
+
+ #pre-Beam movement tableside
+#folderName = "C:/Andrei/ScopeCollect/pre_movement/tableSide/"
+#dataFileName = "2020_08_08_20_08_30"
+
+ #low pressure table side measurement
+#folderName = "C:/Andrei/ScopeCollect/lowPressureTableSide/"
+#dataFileName = "2020_08_08_20_53_59"
+
+ #post movement 1
+#folderName = "C:/Andrei/ScopeCollect/post_movement/tableSideTof/"
+#dataFileName = "2020_08_08_21_29_27"
+
+# #post movement 2
+#folderName = "C:/Andrei/ScopeCollect/post_movement2/tableToF/"
+#dataFileName = "2020_08_08_21_49_11"
+
+# #post movement 2
+#folderName = "C:/Andrei/ScopeCollect/post_movement2/walkwaySide/"
+#dataFileName = "2020_08_08_21_40_42"
 
 
-
+headerFileName = dataFileName + "_HEADER.txt"
 
 
 
@@ -34,25 +67,63 @@ folderName = "C:/Users/andre/Desktop/100V_lowGas_tightIris/"
 #HELPER METHODS SECTION
 #################
 
-	#bin a raw histogram into the bin width specified by the user.  return a plot line's y-values to resemble histogram blocks, but be of the same length as the input variable 'rawHistogram'
-	def calculateBinnedHistogramTrace(self, rawHistogram, binWidth):
-		lenFullTrace = rawHistogram.size
-		#calculate the number of complete bins that rawHistogram can be binned into, for given binWidth
-		numberCompleteBins = int(np.floor(lenFullTrace/binWidth))
-		#reshape as much of the rawHistogram trace as possible
-		lengthToBeReshaped = numberCompleteBins*binWidth
-		reshapedTraceArray = np.reshape(rawHistogram[0:lengthToBeReshaped], [numberCompleteBins, binWidth])
-		#use the reshaped trace to simplify calculation of bins.  sum up along axis 1 to sum across the bin width dimension.  in other words, sum up the components of a single bin with width binWidth.
-		sumsOfBins = np.sum(reshapedTraceArray, 1)
+#bin a raw histogram into the bin width specified by the user.  return a plot line's y-values to resemble histogram blocks, but be of the same length as the input variable 'rawHistogram'
+def calculateBinnedHistogramTrace(rawHistogram, binWidth):
+	lenFullTrace = rawHistogram.size
+	#calculate the number of complete bins that rawHistogram can be binned into, for given binWidth
+	numberCompleteBins = int(np.floor(lenFullTrace/binWidth))
+	#reshape as much of the rawHistogram trace as possible
+	lengthToBeReshaped = numberCompleteBins*binWidth
+	reshapedTraceArray = np.reshape(rawHistogram[0:lengthToBeReshaped], [numberCompleteBins, binWidth])
+	#use the reshaped trace to simplify calculation of bins.  sum up along axis 1 to sum across the bin width dimension.  in other words, sum up the components of a single bin with width binWidth.
+	sumsOfBins = np.sum(reshapedTraceArray, 1)
 
-		#using the binnedTrace, and the unutilized tail end of rawHistogram, stich together an array of the same dimension as rawHistogram, but with values that represent binned data.
-		binnedPortionOfTrace = np.repeat(sumsOfBins, binWidth)#account for the binned portion of the trace.
-		#stitch on any part of the trace not used in the binning
-		unusedTraceTail = rawHistogram[lengthToBeReshaped:lenFullTrace]
-		binnedTrace = np.concatenate((binnedPortionOfTrace, unusedTraceTail))#need argument of method to be a tuple of the two arrays to be stitched together.
+	#using the binnedTrace, and the unutilized tail end of rawHistogram, stich together an array of the same dimension as rawHistogram, but with values that represent binned data.
+	binnedPortionOfTrace = np.repeat(sumsOfBins, binWidth)#account for the binned portion of the trace.
+	#stitch on any part of the trace not used in the binning
+	unusedTraceTail = rawHistogram[lengthToBeReshaped:lenFullTrace]
+	binnedTrace = np.concatenate((binnedPortionOfTrace, unusedTraceTail))#need argument of method to be a tuple of the two arrays to be stitched together.
 
-		return binnedTrace
+	return binnedTrace
 
+#make a binned histogram plot, between the select x-limits
+def singleBinnedPlot(fullHistogram, binWidth, xLimLow, xLimHigh):
+	binnedHistogram = calculateBinnedHistogramTrace(fullHistogram, binWidth)
+	#make the plot
+	plt.figure(figsize=(14,10))
+	plt.plot(binnedHistogram)
+	plt.xlim(xLimLow, xLimHigh)
+	maxHeight = 1.05*np.amax(binnedHistogram)
+	plt.ylim(0, maxHeight)
+	plt.title("Histogram Binned with Width %d" % (binWidth), fontsize=26)
+	plt.show()
+
+
+
+#simpleMethod to generate some simple plots.  xlimits expected in index
+def makeHistogramPlotsSimple(fullHistogram, binWidth, xLimLow, xLimHigh):
+	binnedHistogram = calculateBinnedHistogramTrace(fullHistogram, binWidth)
+
+	#make plot of full scale histogram, no binning
+	plt.figure(figsize=(14,10))
+	plt.plot(fullHistogram)
+	plt.xlim(0, len(fullHistogram))
+	maxHeight = 1 + np.amax(fullHistogram)
+	plt.ylim(0, maxHeight)
+	plt.title("Unbinned histogram", fontsize=30)
+	plt.show()
+	#plot the full scale histogram, with binning
+	singleBinnedPlot(fullHistogram, binWidth, 0, len(fullHistogram))
+	#make the zoomed in plot for the unbinned plot
+	plt.figure(figsize=(14,10))
+	plt.plot(fullHistogram)
+	plt.xlim(xLimLow, xLimHigh)
+	maxHeight = 1 + np.amax(fullHistogram[xLimLow:xLimHigh])
+	plt.ylim(0, maxHeight)
+	plt.title("Unbinned histogram, zoomed in", fontsize=30)
+	plt.show()
+	#make the zoomed in plot for the binned plot
+	singleBinnedPlot(fullHistogram, binWidth, xLimLow, xLimHigh)
 
 
 
@@ -78,15 +149,6 @@ for line in headerFile:
 		#WARNING!!!  Andrei had a misunderstanding of file saving when the data acquisition code was written.  As a result, the value in the header is 96 bytes larger than the true trace size.  The line below compensates for this mistake, the 96 subtraction is critical for correct data readout.
 		traceDataSize = (int(match.group(1)) - 96)
 
-# #block of code for debugging
-# segmentNowStart = 0
-# dataFile.seek(segmentNowStart)
-# segmentNow = dataFile.read(traceDataSize)
-# traceNow = np.frombuffer(segmentNow, dtype=dt)
-# plt.plot(traceNow)
-# plt.show()
-# print(segmentNowStart)
-
 #################
 #PROCESS SAVED RAW DATA
 #################
@@ -109,6 +171,7 @@ while moreToRead:
 		print("A trace was read in with a byte size that is not equal to the size prescribed in the header file.")
 	else:
 		#a normal, complete trace has been extracted.  This section may be used to process traces as desired by user.
+
 		#perform processing similar to that done on the o-scope
 		rawData, hitIndices = onTheFlyProcessing(traceNow)
 
@@ -128,11 +191,13 @@ while moreToRead:
 #################
 #SECTION TO MAKE PLOTS FROM PROCESSED DATA
 #################
-plt.plot(histogramCollected)
-plt.show()
+binWidthForPlot = 5
+xLimLow = 2000
+xLimHigh = 5000
 
+makeHistogramPlotsSimple(histogramCollected, binWidthForPlot, xLimLow, xLimHigh)
 
-
+#singleBinnedPlot(histogramCollected, 5, 2000, 3500)
 
 
 #################

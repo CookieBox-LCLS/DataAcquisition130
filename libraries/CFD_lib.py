@@ -358,6 +358,18 @@ def findZeroCrossings(seriesToProcess, comparedTrace):
 		seriesLowest = seriesToProcess[0]
 		seriesHighest = seriesToProcess[-1]
 
+		#verify that series crossing isn't too close to either start or end of the trace.  If it is too near to either, can't test whether zero crossing is valid.
+		#Note that the condition checks look at seriesLowest - 1 and seriesHighest + 1.  This is because the way the while loops go through below, the loop can cause either indLow or indHigh to go out of bounds of comparedTrace, and then require a call to comparedTrace with an invalid index on the next boolean condition check.
+		if (seriesLowest - 1) < 0 or seriesHighest < 0:
+			#verify that the seriesToProcess does not include negative integers - that is, that it is not too close to the start of trace to pass the test
+			#if it is, return that the series is not valid
+			return False, 0
+		elif (seriesHighest + 1) >= len(comparedTrace) or seriesLowest >= len(comparedTrace):
+			#verify that the seriesToProcess is not too close to the end of the trace - that is, verify it isn't at the cutoff edge of the time axis.
+			#if it is, return that the series is not valid
+			return False, 0
+
+
 		#inspect where the series stops being negative
 		indLow = seriesLowest
 		while (comparedTrace[indLow] < 0) and (indLow <= seriesHighest):
