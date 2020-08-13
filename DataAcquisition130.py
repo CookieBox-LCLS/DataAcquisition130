@@ -48,7 +48,7 @@ from TOFtoEnergyConversion_lib import calculateOverlapMatrixTOFtoEnergy
 #initialize some constants used in program
 HITRATEMAX = 50
 HITRATE_RUNNINGAVERAGE_WINDOWWIDTH = 1000
-NUMBER_ITERATIONS_BETWEEN_PLOT = 9
+NUMBER_ITERATIONS_BETWEEN_PLOT = 49
 #declare the energy vector parameters for the energy histogram
 ENERGYMIN = 0
 ENERGYMAX = 30
