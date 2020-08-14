@@ -33,8 +33,8 @@ headerFile = open(folderName + headerFileName, "r")
 for line in headerFile:
 	match = re.search("The size of an individual bit of binary data is: (\d+)", line)
 	if match:
-		#WARNING!!!  Andrei had a misunderstanding of file saving when the data acquisition code was written.  As a result, the value in the header is 96 bytes larger than the true trace size.  The line below compensates for this mistake, the 96 subtraction is critical for correct data readout.
-		traceDataSize = (int(match.group(1)) - 96)
+		#code has found where the trace size is saved in the header, and extracts that value.
+		traceDataSize = int(match.group(1))
 
 # #block of code for debugging
 # segmentNowStart = 0
