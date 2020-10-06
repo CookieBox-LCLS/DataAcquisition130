@@ -9,7 +9,10 @@ def dataIsReadyForReadout():
 
 #read in data from channel 1
 def readInDataFromScope_c1():
+	#use with defult scaling argument of True.  the returned data is doubles (64 bit float) CHECK THIS FOR CORRECTNESS!!!!  HAVING ISSUES WITH LITERATURE REFERENCES
 	newWaveform = app.Acquisition.C1.Out.Result.DataArray
+	#alternatively, can set scaling argument to False.  For those cases, the output is a 16-bit signed integer CHECK THIS FOR CORRECTNESS!!!!  HAVING ISSUES WITH LITERATURE REFERENCES
+	#newWaveFormInt = app.Acquisition.C1.Out.Result.DataArray(arrayValuesScaled=False)
 	#convert to numpy array before being returned out
 	newWaveFormAsArray = np.array(newWaveform)
 	return newWaveFormAsArray

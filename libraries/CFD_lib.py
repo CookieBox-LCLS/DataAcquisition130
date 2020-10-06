@@ -1,5 +1,8 @@
 import matplotlib.pyplot as pyplt
 import numpy as np
+import math
+import sys
+from scipy.signal import argrelmax, argrelmin
 
 #this library contains different CFD methods that may be used for on-the-fly processing 
 
@@ -283,6 +286,101 @@ def andreiKamalovCFD_main(dataIn):
 
 	return dataIn_Centered, hitIndices
 
+
+#CFD that finds hits based on statistical analysis of the raw trace.  The main idea is to look at the stastitical probability of each trace having it's magnitude.  Look for clusters that are above some threshold, and consider those clusters as unique.  Then look through the cluster to see if theres multiple separate hits within it.
+zScoreUnversal = 3
+def andreiKamalovCFD_statistical(dataIn, noiseRegionLimitLow=0, noiseRegionLimitHigh=1000):
+	hitIndices = []
+	hitLimitsHigh = []
+	convPeakMax = []
+
+	#normalize the trace to be positive, and have max value of +1
+	normedTrace = normalizeTrace(dataIn)
+	dataInNormalize = np.diff(normedTrace)
+	#use the suggested noise region to establish some understanding of the trace and it's signal/noise ratio
+	stdDev = np.std(dataInNormalize[noiseRegionLimitLow:noiseRegionLimitHigh])
+	#convert trace to a series of z-scores
+	zScoresArray = dataInNormalize/stdDev
+
+	#convolve zScoresArray across some length
+	minimumWidthOfHit = 4
+	convolved_zScores = np.convolve(zScoresArray, np.ones(minimumWidthOfHit), 'same')
+
+	#use convolved z-scores array to look for local maxima
+	findMaxIndices = argrelmax(convolved_zScores)
+	findMaxIndices = findMaxIndices[0]#unwrap the output of argrelmax
+
+	firstRealPeakZScore = 0
+	firstPeakEstablished = False
+	#look through each local maxima
+	for localMax in findMaxIndices:
+		combined_zScoreHere = convolved_zScores[localMax]
+		#check whether the current local maxima meets criteria for certainty that a peak is found
+		if combined_zScoreHere/math.sqrt(minimumWidthOfHit) > zScoreUnversal:
+			#check if localMax is already accounted for in between a previously located low and high limit pair
+			if not checkIfAlreadyConsidered(localMax, hitIndices, hitLimitsHigh):
+
+				if not firstPeakEstablished:
+					firstRealPeakZScore = combined_zScoreHere
+					firstPeakEstablished = True
+
+				if combined_zScoreHere > 0.05*firstRealPeakZScore:
+					#current maxima believed to be a legitamte peak.  Process it to isolate the domain of the peak.
+					peakLimitLow, peakLimitHigh = isolatePeakBy_zScores(zScoresArray, localMax)
+
+					#check if this is possible ringing - basic check is to see if the start is negative valued and if the positive value is not that much larger in terms of magnitude
+					if (normedTrace[peakLimitLow] < 0) and (np.absolute(normedTrace[peakLimitHigh]) <= 5*np.absolute(normedTrace[peakLimitLow])):
+						#this could be a ringing peak, better to drop it
+						pass
+					else:
+						# #sometimes, found peaks are actually double/triple/etc peaks that are clunked as a single structure.  This structure can be broken up into individual components.
+						# #separatedStructureIntoUniquePeaks will do this, and if a supplied peak is actually a single peak, it should not be affected
+						# separatedStarts, separatedEnds, peakMaxima = separateStructureIntoUniquePeaks(dataInNormalize, peakLimitLow, peakLimitHigh)
+
+						#append each peak, one at a time, onto the growing list.
+						# numPeaks = separatedStarts.size
+						numPeaks = 1
+						for i in range(numPeaks):
+							#appending is done in the for loop.
+							if(len(hitIndices) > 0):
+								#the list was previously non-empty.  IF a peak is reported twice for some reason, the redundancy checking can be performed here
+								if peakLimitLow in hitIndices:
+									#the peak already exists in the hit index.  do not add it for fear of double counting.
+									pass
+								else:
+									hitIndices.append(peakLimitLow)
+									hitLimitsHigh.append(peakLimitHigh)
+									convPeakMax.append(localMax)
+							else:
+								hitIndices.append(peakLimitLow)
+								hitLimitsHigh.append(peakLimitHigh)
+								convPeakMax.append(localMax)
+
+	#go backwards from end to start, and eliminate peaks that begin too soon after the end of the previous peak.  This helps eliminate ripples that the algorithm claims are separate peaks, but are actually part of the previous peak, just separated by a short burst of low z-score
+	for i in range(len(hitIndices)-1, 0, -1):
+		if ((hitIndices[i] - hitLimitsHigh[i-1]) < 7):
+			#hit is too close to previous hit.  remove it from the list
+			hitIndices.pop(i)
+			hitLimitsHigh.pop(i)
+			convPeakMax.pop(i)
+
+	#convert hitIndices list into an array
+	hitIndices = np.asarray(hitIndices)
+	hitLimitsHigh = np.asarray(hitLimitsHigh)
+	convPeakMax = np.asarray(convPeakMax)
+
+	return dataIn, hitIndices, hitLimitsHigh, convPeakMax
+
+
+
+#quick hack to apply CFD to MCP direct output.  This is a quick hack to use the normal CFD but negate the data to help it find the hits associated with the MCP readout.
+def andreiKamalovCFD_MCPHack(dataIn):
+	dataInNegated = -1 * dataIn
+
+	dataOut_Centered, hitIndices = andreiKamalovCFD_main(dataInNegated)
+
+	return dataOut_Centered, hitIndices
+
 #####################################################################################
 #support methods for andrei's CFD
 
@@ -387,3 +485,268 @@ def findZeroCrossings(seriesToProcess, comparedTrace):
 		else:
 			#this was not a valid series
 			return False, 0
+
+
+
+#function to normalize a trace to be positive, such that the max of the trace is 1.
+def normalizeTrace(dataIn):
+	#ensure that the dataIn value is normalized to zero.  Do this by finding a median value of the trace
+	dataInNorm = dataIn - np.median(dataIn)
+	#normalize the data such that the highest point has absolute value of 1.  First, find the maximal value but also figure out if peak is upwards or downwards going
+	maximalValueAbs = np.absolute(np.max(dataInNorm))
+	minimalValueAbs = np.absolute(np.min(dataInNorm))
+	if(maximalValueAbs > minimalValueAbs):
+		#the peak is positive going.  normalize with positive value
+		dataInNorm = dataInNorm/maximalValueAbs
+	else:
+		#the peak is negative going.  normalize with negative value
+		dataInNorm = -1*dataInNorm/minimalValueAbs
+
+	return dataInNorm
+
+
+#a suspected peak was found based on combined z-scores.  find a good length for it based on the middle.
+def isolatePeakBy_zScores(zScoresArray, localMaxIndex):
+	streakBreakerCount = 3
+	thresholdScore = zScoreUnversal
+	#start by trying to find the later times for which the peak still seems statistically significant
+	indexCutoffHigh = localMaxIndex
+	lastImproved_zScore = zScoresArray[localMaxIndex]
+	current_zScoreSum = zScoresArray[localMaxIndex]
+	currentStrikes = 0
+	currentLength = 1
+	lastImproved_zScoreSum = current_zScoreSum
+	#loop through later times, increasing the upper x-limit of the found peak until enough strikes have been taken
+	while currentStrikes < streakBreakerCount:
+		#find new variables associated with an incremented width of peak
+
+		if(indexCutoffHigh + 1 == len(zScoresArray)):
+			break
+		else:
+			indexCutoffHigh += 1
+
+		currentLength += 1
+		current_zScoreSum = current_zScoreSum + zScoresArray[indexCutoffHigh]
+		new_zScore = (current_zScoreSum/math.sqrt(currentLength))
+		#see if adding this index helped the cumulative z-score or not
+		if new_zScore >= lastImproved_zScore:
+			#expanding to this index benefits the cumulative z-score, so thi series is likely part of the hit
+			lastImproved_zScore = new_zScore
+			lastImproved_zScoreSum = current_zScoreSum
+			#upper index has been increased, reset the strike count so method can continue to try expanding the peak length
+			currentStrikes = 0
+		else:
+			#expanding to this index hurts the cumulative z-score metric.  Would be better to not include this index as part of the found hit
+			currentStrikes += 1
+
+	#the while loop has been exited, suggesting that the max permissible number of strikes has been reached while trying to expand the peak.  This number of indices appended to the peak on the positive side failed to improve the cumulative z-score, and they should be removed from the final result
+	indexCutoffHigh -= streakBreakerCount
+	currentLength -= streakBreakerCount
+
+	#perform a similar process to expand the lower time limit of the found peak
+	currentStrikes = 0
+	indexCutoffLow = localMaxIndex
+	current_zScoreSum = lastImproved_zScoreSum
+	#loop through earlier times, decreasing the lower x-limit of the found peak until strike limit has been reached
+	while currentStrikes < streakBreakerCount:
+		indexCutoffLow -= 1
+		currentLength += 1
+		current_zScoreSum = current_zScoreSum + zScoresArray[indexCutoffLow]
+		new_zScore = (current_zScoreSum/math.sqrt(currentLength))
+		#see if adding this index helped the cumulative z-score or not
+		if new_zScore >= lastImproved_zScore:
+			#expanding to this index benefits the cumulative z-score, so thi series is likely part of the hit
+			lastImproved_zScore = new_zScore
+			lastImproved_zScoreSum = current_zScoreSum
+			#upper index has been increased, reset the strike count so method can continue to try expanding the peak length
+			currentStrikes = 0
+		else:
+			#expanding to this index hurts the cumulative z-score metric.  Would be better to not include this index as part of the found hit
+			currentStrikes += 1
+
+	#the while loop has completed, meaning the max permissible of invalid indices on the lower limit have been investigated across.  Undo their effects here
+	indexCutoffLow += streakBreakerCount
+	currentLength -= streakBreakerCount
+
+	#the cutoff indices found thus far normally under-represent the width of the peak.  This is because of how small the noise floor can be compared to a good peak.  Can optionally continue to add tid-bit sections until the noise is confidently encountered.
+	#this double while loop below will scout out regions of incrementally smaller steps to check them for whether they may be added on or not.
+	lengthsToCheck = 3
+	keepAddingHighSide = True
+	addOnScoreThresh = 2
+	while lengthsToCheck > 0:
+		while keepAddingHighSide:
+			if(indexCutoffHigh + lengthsToCheck >= len(zScoresArray)):
+				break
+			zScoreSumAddOn = np.sum(zScoresArray[indexCutoffHigh:(indexCutoffHigh + lengthsToCheck)])
+			if (zScoreSumAddOn/math.sqrt(lengthsToCheck)) > addOnScoreThresh:
+				indexCutoffHigh += lengthsToCheck
+				currentLength += lengthsToCheck
+			else:
+				keepAddingHighSide = False
+
+		#reset the loop for the next, shorter checking iteration.
+		lengthsToCheck -= 1
+		keepAddingHighSide = True
+
+
+	#repeat the process for the lower cutoff index.
+	lengthsToCheck = 3
+	keepAddingLowSide = True
+	addOnScoreThresh = 2
+	while lengthsToCheck > 0:
+		while keepAddingLowSide:
+			zScoreSumAddOn = np.sum(zScoresArray[(indexCutoffLow-lengthsToCheck):indexCutoffLow])
+			if (zScoreSumAddOn/math.sqrt(lengthsToCheck)) > addOnScoreThresh:
+				indexCutoffLow -= lengthsToCheck
+				currentLength += lengthsToCheck
+			else:
+				keepAddingLowSide = False
+
+		#reset the loop for the next, shorter checking iteration.
+		lengthsToCheck -= 1
+		keepAddingLowSide = True
+
+	#return x-limits of the found hit
+	return indexCutoffLow, indexCutoffHigh
+
+
+#method for checking whether a peak is in fact a peak and not probable ringing
+def validatePeak(dataIn, peakIndex):
+	spanToIntegrateAcrossPerDirection = 30
+
+	#figure out limits across which to integrate to do the peak validation
+	indexIntegralLow = peakIndex - spanToIntegrateAcrossPerDirection
+	if indexIntegralLow < 0:
+		indexIntegralLow = 0
+
+	indexIntegralHigh = peakIndex + spanToIntegrateAcrossPerDirection
+	if indexIntegralHigh >= len(dataIn):
+		indexIntegralHigh = len(dataIn) - 1
+
+	integral = np.sum(dataIn[indexIntegralLow:indexIntegralHigh])
+
+	if integral >= 0:
+		return True
+	else:
+		return False
+
+
+# #test whether there is a double peak that is about to be reported.
+# def postFindValidate(dataIn, peakLimitLow, peakLimitHigh):
+# 	convolvedTrace = np.convolve(dataIn[peakLimitLow:peakLimitHigh], np.ones(7), 'same')
+
+# 	#test whether theres more than one peak, and handle the situation if so.
+# 	foundPeaks = argrelmax(convolvedTrace)
+# 	if len(foundPeaks[0]) == 1:
+# 		return True
+# 	else:
+# 		return False
+
+
+#This method will take a supplied range and inspect it to be either a single peak or a cluster of multiple peaks that never return to noise floor level.  IF it is a multipeak, it goes ahead and separates the conglomerate by separating based on local minima.
+def separateStructureIntoUniquePeaks(normalizedData, startOfStructure, endOfStructure):
+	#convolve the subset of the trace that is believed to be a multi-peak
+	convolvedSubTrace = np.convolve(normalizedData[startOfStructure:endOfStructure], np.ones(31), 'same')
+
+	#look for breaking points.  minima probably serve as good as anything
+	peakMaxima = argrelmax(convolvedSubTrace) + startOfStructure
+	peakMaxima = peakMaxima[0]
+	foundMinima = argrelmin(convolvedSubTrace) + startOfStructure
+	foundMinima = foundMinima[0]
+	#the code expects there to be one more maxima than minima.  if this is not the case, there are a number of potential causes, and it seems non-trivial to figure out what to do.
+	if peakMaxima.size == foundMinima.size + 1:
+		# may proceed
+		pass
+	else:
+		#something weird happening with max/min finders.  cannot split a peak up into sub-components.
+		peakStarts = np.zeros(1, dtype=int)
+		peakStarts[0] = startOfStructure
+		peakEnds = np.zeros(1, dtype=int)
+		peakEnds[0] = endOfStructure
+		return peakStarts, peakEnds, peakStarts
+
+
+	# if peakMaxima.size > foundMinima.size:
+	# 	#this is fine, we should have 1 more maxima than minima
+	# 	pass
+	# else:
+	# 	if peakMaxima.size == foundMinima.size :
+	# 		#likely have to delete a minima peak.  but first, make sure theyre not both zero
+	# 		if peakMaxima.size == 0:
+	# 			#they are both zero due to this and the previous if statements.  something has gone wrong with the man/min finders, return original series as single peak
+	# 			#convert values from integer to array to be consistent with other output option.
+	# 			peakStarts = np.zeros(1, dtype=int)
+	# 			peakStarts[0] = startOfStructure
+	# 			peakEnds = np.zeros(1, dtype=int)
+	# 			peakEnds[0] = endOfStructure
+	# 			return peakStarts, peakEnds, peakStarts
+	# 		if foundMinima.size == 0 or peakMaxima.size == 0:
+	# 			breakpoint()
+	# 		#look for a faulty minima (minima that is between either startOfStructure and 1st maxima or last maxima and endOfStructure) and drop it
+	# 		if foundMinima[0] < peakMaxima[0]:
+	# 			#faulty minima is between start and 1st peak
+	# 			foundMinima = foundMinima[1:]
+	# 		elif foundMinima[-1] > peakMaxima[-1]:
+	# 			#faulty minima lies between final maxima and end
+	# 			foundMinima = foundMinima[0:-1]
+	# 		else:
+	# 			#not sure what went wrong, might be best to simply return initial conditions.
+	# 			peakStarts = np.zeros(1, dtype=int)
+	# 			peakStarts[0] = startOfStructure
+	# 			peakEnds = np.zeros(1, dtype=int)
+	# 			peakEnds[0] = endOfStructure
+	# 			return peakStarts, peakEnds, peakStarts
+	# 			# #error out and inform terminal
+	# 			# sys.exit("ERROR: There is a mismatch between number of found local minima and maxima.  This means the code mut be further developed to figure out the origin of this.")
+
+
+
+	if(len(peakMaxima) == 1):
+		#there is only one peak here.  no need to do the other possible processing
+		#convert values from integer to array to be consistent with other output option.
+		peakStarts = np.zeros(1, dtype=int)
+		peakStarts[0] = startOfStructure
+		peakEnds = np.zeros(1, dtype=int)
+		peakEnds[0] = endOfStructure
+		return peakStarts, peakEnds, peakMaxima
+	else:
+		#there are truly multiple peaks here, and it is important to separate the construct into its sub-peaks
+
+		#decide on number of sub-peaks to report back.  Use this number to initialize start/end lists
+		numPeaks = foundMinima.size + 1
+		peakStarts = np.zeros(numPeaks, dtype=int)
+		peakEnds = np.zeros(numPeaks, dtype=int)
+		#break up the start/end of structures with the discovered minima
+		for i in range(numPeaks):
+			if i == 0:
+				#if first peak in series, the start is the overall structure start
+				peakStarts[i] = startOfStructure
+				peakEnds[i] = foundMinima[i] - 1#the subtract 1 is to not have overlap between what is considered end of a peak and start of a new one
+			elif i == (numPeaks - 1):
+				#if this is the final peak in the series, the end of the peak is the overall structure end
+				peakStarts[i] = foundMinima[i - 1]
+				peakEnds[i] = endOfStructure
+			else:
+				#use the found local minima as start/ends of the peaks in the multipeak structure
+				peakStarts[i] = foundMinima[i - 1]
+				peakEnds[i] = foundMinima[i] - 1#the subtract 1 is to not have overlap between what is considered end of a peak and start of a new one
+
+		#return the indices at which the peaks are claimed to start and end at.
+		return peakStarts, peakEnds, peakMaxima
+
+#check if index localMax is already accounted for, by seeing if there's a pair of corresponding hitStarts and hitEnds that encompass localMax's index
+def checkIfAlreadyConsidered(localMax, hitStarts, hitEnds):
+	#set the default return value.  if a hit is found in previously accounted list, this flag is changed to true
+	flagFound = False
+	#figure out how many previous hits to check through
+	numPreviousHits = len(hitStarts)
+
+	#scan through each of the previous hits
+	for i in range(numPreviousHits):
+		#check if local max falls within the i'th previous hit
+		if (localMax > hitStarts[i]) and (localMax < hitEnds[i]):
+			#if it does, return True.
+			flagFound = True
+			return flagFound
+
+	return flagFound

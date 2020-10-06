@@ -4,7 +4,9 @@ import os
 from scipy import fft
 import numpy as np
 #select which CFD to use to process data
-from CFD_lib import andreiKamalovCFD_main as CFD
+# from CFD_lib import andreiKamalovCFD_main as CFD
+# from CFD_lib import andreiKamalovCFD_MCPHack as CFD
+from CFD_lib import andreiKamalovCFD_statistical as CFD
 # from CFD_lib import aveGattonCFD_main as CFD
 # from CFD_lib import ryanCoffeeCFD_main as CFD #IS NOT CURRENTLY COMPATIBLE (04/23/2020)
 
@@ -39,6 +41,25 @@ def addToHitRateDistribution(newHits, hitRateOld):
 	hitRateNew[numHits] = hitRateOld[numHits] + 1
 
 	return hitRateNew
+
+#bin a raw histogram into the bin width specified by the user.  return a plot line's y-values to resemble histogram blocks, but be of the same length as the input variable 'rawHistogram'
+def calculateBinnedHistogramTrace(rawHistogram, binWidth):
+	lenFullTrace = rawHistogram.size
+	#calculate the number of complete bins that rawHistogram can be binned into, for given binWidth
+	numberCompleteBins = int(np.floor(lenFullTrace/binWidth))
+	#reshape as much of the rawHistogram trace as possible
+	lengthToBeReshaped = numberCompleteBins*binWidth
+	reshapedTraceArray = np.reshape(rawHistogram[0:lengthToBeReshaped], [numberCompleteBins, binWidth])
+	#use the reshaped trace to simplify calculation of bins.  sum up along axis 1 to sum across the bin width dimension.  in other words, sum up the components of a single bin with width binWidth.
+	sumsOfBins = np.sum(reshapedTraceArray, 1)
+
+	#using the binnedTrace, and the unutilized tail end of rawHistogram, stich together an array of the same dimension as rawHistogram, but with values that represent binned data.
+	binnedPortionOfTrace = np.repeat(sumsOfBins, binWidth)#account for the binned portion of the trace.
+	#stitch on any part of the trace not used in the binning
+	unusedTraceTail = rawHistogram[lengthToBeReshaped:lenFullTrace]
+	binnedTrace = np.concatenate((binnedPortionOfTrace, unusedTraceTail))#need argument of method to be a tuple of the two arrays to be stitched together.
+
+	return binnedTrace
 
 #updateHitRateRunningWindow updates the running window that is used to keep track of the recent hit rate.  a runnind window of some size is used to store the recent hit rates per trace.  when the hit rate is needed, the window contents will be averaged.  this method will take the old window (hitRateMonitoringWindowOld), replace the oldest entry as indicated with modulo(windowIndexToUse, lengthWindow), with the number of hits in newHits
 def updateHitRateRunningWindow(windowIndexToUse, newHits, hitRateMonitoringWindowOld):
@@ -235,3 +256,16 @@ def generateNewFileAndHeader(fileNameNow, rawDataToWriteArray):
 
 	#the empty array is returned so that the loop that called this function knows that there is nothing else to read out of the array.
 	return rawDataToWriteArray
+
+
+#The original method of storing collected data into binary format has some drawbacks.  It was decided that there is a benefit to saving data in the HDF5 format, for which there is a package, h5py.
+#The method is worked on here, while the original data storage methods are kept, so as to minimize interference of work while improvements are made
+#this method is ran when the first bit of data is generated.  It looks at the dimensions of the first bit of data, and creates an appropriate data file and header file prior to any further accumulation.  As a consequence, there will only be 1 trace passed in through rawDataToWriteArray, and only one call to np.pop is necessary.
+def generateNewFileAndHeader_h5py(fileNameNow, rawDataToWriteArray):
+	#extract what the acquired trace looks like.  There should only be one trace measured before this method has been called
+	toWriteList = rawDataToWriteArray.pop(0)
+	#ensure the measured trace is a numpy array, and of the desired data type.
+	toWrite = np.asarray(toWriteList, dtype=np.float32)
+
+
+	pass
