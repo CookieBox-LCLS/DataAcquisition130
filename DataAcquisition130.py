@@ -62,6 +62,7 @@ class MainScriptManager_TK(tk.Tk):
 	def dataAcquisitionBranch(self):
 		#proceed to read out data into arrays
 		newData = readInData()
+		newData = -1*newData
 
 		#perform on the fly processing for the arrays
 		rawData, hitIndices = onTheFlyProcessing(newData)
@@ -143,6 +144,7 @@ class MainScriptManager_TK(tk.Tk):
 			if getDataBuffered():
 				#collect a first trace, and put it into the data array.  this needs to be done to see what the data looks like.
 				newRawData, self.timeValuesFull = readInDataWithTime()
+				newRawData = -1*newRawData
 				#perform on the fly processing for the new data.  the expected return is 'rawData', which is the data that needs to be written to the file.  rawData can be identical to the input value 'newRawData'.  hitIndices contains the index of all the hits found in 'newRawData' with a CFD
 				rawData, hitIndices = onTheFlyProcessing(newRawData)
 				#send rawData to array that is waiting to be written out

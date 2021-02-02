@@ -22,6 +22,10 @@ savedDataTypeSizeInBytes = 8
 dt = np.dtype("float64")
 #flag for whether the user would like to manually progress through each trace
 flagEachTraceStop = False
+#flag for controlling whether to calculate and plot energy histogram or not.
+plotEnergyHistogramFlag = False
+#bin width for ToF histogram
+binWidth = 1
 #interactive mode needs to be on for plotting in a loop structure
 plt.ion()
 
@@ -80,44 +84,44 @@ appliedVoltageArray = []
 # timeZeroArray.append(timeZero)
 # appliedVoltageArray.append(appliedVoltage)
 
-folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_200V/BackTubeMCPMesh_200V/500V_2300V_2700V/"
-dataFileName = "2020_08_27_12_15_52"
-timeZero = -500
-appliedVoltage = 200
-folderArray.append(folderName)
-fileArray.append(dataFileName)
-timeZeroArray.append(timeZero)
-appliedVoltageArray.append(appliedVoltage)
+# folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_200V/BackTubeMCPMesh_200V/500V_2300V_2700V/"
+# dataFileName = "2020_08_27_12_15_52"
+# timeZero = -500
+# appliedVoltage = 200
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
 
-###retardation tests for 200V applied on front, lower voltages on back components
-folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_200V/BackTubeMCPMesh_150V/450V_2250V_2650V/"
-dataFileName = "2020_08_27_11_56_57"
-timeZero = -600
-appliedVoltage = 150
-folderArray.append(folderName)
-fileArray.append(dataFileName)
-timeZeroArray.append(timeZero)
-appliedVoltageArray.append(appliedVoltage)
-
-
-folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_200V/BackTubeMCPMesh_100V/400V_2200V_2600V/"
-dataFileName = "2020_08_27_17_49_21"
-timeZero = -800
-appliedVoltage = 100
-folderArray.append(folderName)
-fileArray.append(dataFileName)
-timeZeroArray.append(timeZero)
-appliedVoltageArray.append(appliedVoltage)
+# ###retardation tests for 200V applied on front, lower voltages on back components
+# folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_200V/BackTubeMCPMesh_150V/450V_2250V_2650V/"
+# dataFileName = "2020_08_27_11_56_57"
+# timeZero = -600
+# appliedVoltage = 150
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
 
 
-folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_200V/BackTubeMCPMesh_50V/350V_2150V_2550V/"
-dataFileName = "2020_08_27_17_23_11"
-timeZero = -1000
-appliedVoltage = 50
-folderArray.append(folderName)
-fileArray.append(dataFileName)
-timeZeroArray.append(timeZero)
-appliedVoltageArray.append(appliedVoltage)
+# folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_200V/BackTubeMCPMesh_100V/400V_2200V_2600V/"
+# dataFileName = "2020_08_27_17_49_21"
+# timeZero = -800
+# appliedVoltage = 100
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+
+
+# folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_200V/BackTubeMCPMesh_50V/350V_2150V_2550V/"
+# dataFileName = "2020_08_27_17_23_11"
+# timeZero = -1000
+# appliedVoltage = 50
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
 
 
 
@@ -188,6 +192,153 @@ appliedVoltageArray.append(appliedVoltage)
 
 
 
+#######11/18/2020 data
+
+# folderName = "C:/Andrei/ScopeCollect/11_18_2020/postScans_100V_100V/"
+# dataFileName = "2020_11_18_21_24_49"
+# timeZero = 0
+# appliedVoltage = 100
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+
+# folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_50/backAt_50/"
+# dataFileName = "2020_11_18_14_05_41"
+# timeZero = 0
+# appliedVoltage = 100
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+
+# folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_100/backAt_100/"
+# dataFileName = "2020_11_18_13_35_00"
+# timeZero = 0
+# appliedVoltage = 100
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+
+# folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_100/backAt_50/"
+# dataFileName = "2020_11_18_18_55_16"
+# timeZero = 0
+# appliedVoltage = 100
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+
+# folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_150/backAt_150/"
+# dataFileName = "2020_11_18_14_48_55"
+# timeZero = 0
+# appliedVoltage = 150
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+
+# folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_150/backAt_100/"
+# dataFileName = "2020_11_18_15_20_49"
+# timeZero = 0
+# appliedVoltage = 150
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+
+# folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_150/backAt_50/"
+# dataFileName = "2020_11_18_15_49_41"
+# timeZero = 0
+# appliedVoltage = 150
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+
+folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_200/backAt_200/"
+dataFileName = "2020_11_18_20_23_32"
+timeZero = 0
+appliedVoltage = 150
+folderArray.append(folderName)
+fileArray.append(dataFileName)
+timeZeroArray.append(timeZero)
+appliedVoltageArray.append(appliedVoltage)
+
+folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_200/backAt_150/"
+dataFileName = "2020_11_18_19_54_49"
+timeZero = 0
+appliedVoltage = 150
+folderArray.append(folderName)
+fileArray.append(dataFileName)
+timeZeroArray.append(timeZero)
+appliedVoltageArray.append(appliedVoltage)
+
+folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_200/backAt_100/"
+dataFileName = "2020_11_18_19_22_48"
+timeZero = 0
+appliedVoltage = 150
+folderArray.append(folderName)
+fileArray.append(dataFileName)
+timeZeroArray.append(timeZero)
+appliedVoltageArray.append(appliedVoltage)
+
+folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_200/backAt_50/"
+dataFileName = "2020_11_18_16_32_35"
+timeZero = 0
+appliedVoltage = 150
+folderArray.append(folderName)
+fileArray.append(dataFileName)
+timeZeroArray.append(timeZero)
+appliedVoltageArray.append(appliedVoltage)
+
+
+
+
+
+# #8-27-2020 data sets here
+# folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_200V/BackTubeMCPMesh_50V/350V_2150V_2550V/"
+# dataFileName = "2020_08_27_17_23_11"
+# timeZero = 0
+# appliedVoltage = 200
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+
+# folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_150V/BackTubeMCPMesh_50V/350V_2150V_2550V/"
+# dataFileName = "2020_08_27_17_03_02"
+# timeZero = 0
+# appliedVoltage = 150
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+
+# folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_100V/BackTubeMCPMesh_50V/350V_2150V_2550V/"
+# dataFileName = "2020_08_27_13_15_58"
+# timeZero = 0
+# appliedVoltage = 100
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+
+# folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_50V/BackTubeMCPMesh_50V/350V_2150V_2550V/"
+# dataFileName = "2020_08_27_15_53_24"
+# timeZero = 0
+# appliedVoltage = 50
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+
+
+
+
+
+
 
 figHandleCountHistogram = plt.figure(figsize=(7,5))
 axesHandleCountHistogram = figHandleCountHistogram.add_axes([0, 0, 1, 1])
@@ -199,8 +350,9 @@ figHandleFourierSum = plt.figure(figsize=(7,5))
 axesHandleFourierSum = figHandleFourierSum.add_axes([0, 0, 1, 1])
 figHandleFourierSumCutoff = plt.figure(figsize=(7,5))
 axesHandleFourierSumCutoff = figHandleFourierSumCutoff.add_axes([0, 0, 1, 1])
-figHandleEnergyHistogram = plt.figure(figsize=(7,5))
-axesHandleEnergyHistogram = figHandleEnergyHistogram.add_axes([0, 0, 1, 1])
+if plotEnergyHistogramFlag:
+	figHandleEnergyHistogram = plt.figure(figsize=(7,5))
+	axesHandleEnergyHistogram = figHandleEnergyHistogram.add_axes([0, 0, 1, 1])
 
 #calculate fourier axis
 Fs = 40e9
@@ -309,7 +461,7 @@ def executeSingleTraceAnalysis(dataIn):
 
 		#make the per trace raw data plot
 		if(len(hitIndices) > 0):
-			makePlotTraceWithHits(dataIn, np.concatenate((hitIndices, hitLimitsHigh), axis=0), xLimLow = hitIndices[0]-100, xLimHigh = hitIndices[0] + 1400)
+			makePlotTraceWithHits(dataIn, np.concatenate((hitIndices, hitLimitsHigh), axis=0), xLimLow = hitIndices[0]-50, xLimHigh = hitIndices[0] + 1200)
 			# makePlotTraceWithHits(dataIn, hitIndices, colorIn="green")
 		else:
 			# makePlotTraceWithHits(dataIn, hitIndices, colorIn="green")
@@ -550,9 +702,10 @@ for i in range(numFiles):
 			pass
 
 
+	histogramCollected = calculateBinnedHistogramTrace(histogramCollected, binWidth)
 	axesHandleCountHistogram.plot(histogramCollected/np.sum(histogramCollected))
 	axesHandleCountHistogram.set_title("histogram")
-	axesHandleCountHistogram.set_xlim(1200, 4000)
+	axesHandleCountHistogram.set_xlim(1000, 4000)
 	axesHandleCountHistogram.set_ylim(0)
 	plt.pause(1)
 	plt.draw()
@@ -583,18 +736,21 @@ for i in range(numFiles):
 	plt.pause(1)
 	plt.draw()
 
-	appliedVoltage = appliedVoltageArray[i]
-	timeZero = timeZeroArray[i]
-	numSamples = histogramCollected.size
-	#establish time axis
-	timeAxis = [i/Fs for i in list(range(numSamples))]
-	#load the time parameters needed to calculate the overlap matrix
-	TIMEMIN = min(timeAxis)
-	TIMEMAX = max(timeAxis)
-	overlapMatrix, energyVector = calculateOverlapMatrixTOFtoEnergy(energyMin=ENERGYMIN, energyMax=ENERGYMAX, energySamples=energySamples, timeMin = TIMEMIN, timeMax=TIMEMAX, timeSamples=numSamples, timeZero=timeZero/Fs, appliedVoltage=appliedVoltage)
-	energyHistogram = np.matmul(overlapMatrix, histogramCollected)
-	energyHistogramNorm = energyHistogram/max(energyHistogram)
-	axesHandleEnergyHistogram.plot(energyVector, energyHistogramNorm)
+
+	#optional plotting of energy histogram
+	if plotEnergyHistogramFlag:
+		appliedVoltage = appliedVoltageArray[i]
+		timeZero = timeZeroArray[i]
+		numSamples = histogramCollected.size
+		#establish time axis
+		timeAxis = [i/Fs for i in list(range(numSamples))]
+		#load the time parameters needed to calculate the overlap matrix
+		TIMEMIN = min(timeAxis)
+		TIMEMAX = max(timeAxis)
+		overlapMatrix, energyVector = calculateOverlapMatrixTOFtoEnergy(energyMin=ENERGYMIN, energyMax=ENERGYMAX, energySamples=energySamples, timeMin = TIMEMIN, timeMax=TIMEMAX, timeSamples=numSamples, timeZero=timeZero/Fs, appliedVoltage=appliedVoltage)
+		energyHistogram = np.matmul(overlapMatrix, histogramCollected)
+		energyHistogramNorm = energyHistogram/max(energyHistogram)
+		axesHandleEnergyHistogram.plot(energyVector, energyHistogramNorm)
 
 
 

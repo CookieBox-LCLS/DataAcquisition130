@@ -4,9 +4,9 @@ import os
 from scipy import fft
 import numpy as np
 #select which CFD to use to process data
-# from CFD_lib import andreiKamalovCFD_main as CFD
+from CFD_lib import andreiKamalovCFD_main as CFD
 # from CFD_lib import andreiKamalovCFD_MCPHack as CFD
-from CFD_lib import andreiKamalovCFD_statistical as CFD
+# from CFD_lib import andreiKamalovCFD_statistical as CFD
 # from CFD_lib import aveGattonCFD_main as CFD
 # from CFD_lib import ryanCoffeeCFD_main as CFD #IS NOT CURRENTLY COMPATIBLE (04/23/2020)
 

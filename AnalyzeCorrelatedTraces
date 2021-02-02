@@ -1,2 +1,0 @@
-dataFolderDirectory = ''
-globalPathNameChanOne = dataFolderDirectory + '/C1*.trc'

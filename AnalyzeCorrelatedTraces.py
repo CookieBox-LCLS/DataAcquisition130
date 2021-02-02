@@ -1,6 +1,7 @@
 import glob
 import lecroyparser
 import sys
+import statistics as stats
 #add library subfolder
 sys.path.append("C:/Users/andre/Documents/GitHub/DataAcquisition130/libraries")
 from generalPurposeProcessing_lib import cutFourierScaleInHalf
@@ -21,6 +22,7 @@ class analyzeCorrelatedTraces():
 	#helper method to intialize figure and axis handles.
 	def initPlots(self, directory, timeZero=0, appliedVoltage=0):
 		numSamples = 19960
+		self.numSamples = numSamples
 		# if timeZero < 0 :
 		# 	numSamples += int(timeZero)
 		Fs = 40e9
@@ -30,23 +32,34 @@ class analyzeCorrelatedTraces():
 		####initialize and construct overlap matrix - matrix that converts times of flight to energy
 		#establish time axis
 		timeAxis = [i/Fs for i in list(range(numSamples))]
+		self.timeAxis = timeAxis
 		#load the time parameters needed to calculate the overlap matrix
 		TIMEMIN = min(timeAxis)
 		TIMEMAX = max(timeAxis)
 		ENERGYMIN = 0
-		ENERGYMAX = 300
-		energySamples = 1500
+		ENERGYMAX = 200
+		energySamples = 600
 		#make the call to recalcualte the overlap matrix.
 		self.overlapMatrix, self.energyVector = calculateOverlapMatrixTOFtoEnergy(energyMin=ENERGYMIN, energyMax=ENERGYMAX, energySamples=energySamples, timeMin = TIMEMIN, timeMax=TIMEMAX, timeSamples=numSamples, timeZero=timeZero/Fs, appliedVoltage=appliedVoltage)
 
 
+		font = {'family': 'sans-serif',
+	        'color':  'darkred',
+	        'weight': 'normal',
+	        'size': 30,
+	        }
 		####construct raw trace plotter
 		#setup figure that will be used for raw trace plot outs
-		self.figHandleTraces = plt.figure(figsize=(6,4))
-		self.axisTraces = self.figHandleTraces.add_axes([0, 0, 1, 1])
+		self.figHandleTraces = plt.figure(figsize=(7,5))
+		self.axisTraces = self.figHandleTraces.add_axes([0.1, 0.2, 0.8, 0.7])
+		plt.title("Co-Timed MCPs output", fontdict=font)
+		plt.ylabel("Normalized Voltage", fontdict=font)
+		plt.xlabel("Time of Flight (ns)", fontdict=font)
+		plt.tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
+		plt.tick_params(axis='x', labelsize=20)
 
-		xLimLow = 1000
-		xLimHigh = 6000
+		xLimLow = 100
+		xLimHigh = 4400
 		self.xLimits = [xLimLow, xLimHigh]
 
 		#####construct fft figure
@@ -58,13 +71,20 @@ class analyzeCorrelatedTraces():
 
 		#setup range for which to window in on ringing signal
 		self.ringingRangeLow = 0
-		self.ringingRangeHigh = numSamples
+		self.ringingRangeHigh = 2200
+		##setup a fourier x-axis specifically for ringing range.  should have same maximal F, more spaced out DeltaF.
+		numSamplesRinging = self.ringingRangeHigh - self.ringingRangeLow
+		#freqAxisTemp = list(range(int(numSamplesRinging/2) - 1))
+		freqAxisTemp = list(range(self.ringingRangeLow, self.ringingRangeHigh))
+		#using freq axis range to get frequency axis should work because it is in units of samples, and not in units of time/frequency.  The list starts at 0 and goes to max-1
+		freqAxisTemp = [i - self.ringingRangeLow for i in freqAxisTemp]
+		freqAxisRinging = [f*Fs/numSamplesRinging for f in freqAxisTemp]
 		#figure out length of summed up fourier axis
-		axisFourier = cutFourierScaleInHalf(range(self.ringingRangeLow, self.ringingRangeHigh))
-		self.arrayFourierSum = np.zeros(len(axisFourier))
+		self.freqAxisRinging = cutFourierScaleInHalf(freqAxisRinging)
+		self.arrayFourierSum = np.zeros(len(self.freqAxisRinging))
 
 		######setup for histogram plots
-		self.figHandleHistograms = plt.figure(figsize=(6,4))
+		self.figHandleHistograms = plt.figure(figsize=(7,5))
 		self.axisHistogram = self.figHandleHistograms.add_axes([0, 0, 1, 1])
 		#re-use x limits from trace plot to apply to the histogram plot.
 		#initialize the histogram variables that will be used to store the found hits for both channels
@@ -84,8 +104,8 @@ class analyzeCorrelatedTraces():
 	#helper method to plot the raw traces passed in onto the common figure/axis handle
 	def plotBothChannels(self, dataOne, dataTwo, updatePlots):
 		#plots look better if the traces are to scale.  try normalizing them
-		normalizedOne = self.normalizeTrace(dataOne)
-		normalizedTwo = self.normalizeTrace(dataTwo)
+		normalizedOne = dataOne#self.normalizeTrace(dataOne)
+		normalizedTwo = dataTwo#self.normalizeTrace(dataTwo)
 
 		if updatePlots:
 			#find where hits are on the two traces
@@ -114,17 +134,55 @@ class analyzeCorrelatedTraces():
 				collectionToPlot = [hitIndicesTwo[i], hitLimitsHighTwo[i]]
 				# self.axisTraces.scatter(collectionToPlot, normalizedTwo[collectionToPlot], color="red")
 			#set limits
-			self.axisTraces.set_xlim(self.xLimits)
+			#self.axisTraces.set_xlim(self.xLimits)
+
+			#update calls to draw the plot
+			self.figHandleTraces.canvas.draw()
+
+
+	#helper method to plot the raw traces passed in onto the common figure/axis handle.
+	#altered version used only to make presentable plot for Peter's talk
+	def plotBothChannels_talkPlot(self, dataOne, dataTwo, updatePlots, timeAxis):
+		numSamples = 19960
+		times = timeAxis[0:numSamples]*5e9
+		#plots look better if the traces are to scale.  try normalizing them
+		normalizedOne = self.normalizeTrace(dataOne[0:numSamples])
+		normalizedTwo = self.normalizeTrace(dataTwo[0:numSamples])
+
+		if updatePlots:
+			#find where hits are on the two traces
+			rawData, hitIndicesOne, hitLimitsHighOne, convPeakMaxOne = CFD(normalizedOne)
+			rawData, hitIndicesTwo, hitLimitsHighTwo, convPeakMaxTwo = CFD(normalizedTwo)
+
+			#clear previous lines
+			linesOld = self.axisTraces.lines
+			for i in range(len(linesOld)):
+				lineToDel = linesOld.pop(0)
+				del lineToDel
+			#clear previous scatter plots
+			scatterOld = self.axisTraces.collections
+			for i in range(len(scatterOld)):
+				scatterToDel = scatterOld.pop(0)
+				del scatterToDel
+			#plot normalized traces
+			self.axisTraces.plot(times, normalizedTwo, color="green")
+			self.axisTraces.plot(times, normalizedOne, color="blue")
+			plt.legend(["Short ToF", "Long ToF"], fontsize=20)
+			#set limits
+			self.axisTraces.set_xlim(times[self.xLimits])
+			self.axisTraces.set_ylim([-0.12, 1.1])
 
 			#update calls to draw the plot
 			self.figHandleTraces.canvas.draw()
 
 
 	#function to add the ringing frequency component to an ongoing summation
-	def addNewTraceRinging(self, ringingChannelData, updatePlots):
+	def addNewTraceRinging(self, ringingChannelData, updatePlots, inducingChannelData, numFilesProcessed):
 		subsetLimitLow = self.ringingRangeLow
 		subsetLimitHigh = self.ringingRangeHigh
-		ringingDataSubset = ringingChannelData[range(subsetLimitLow, subsetLimitHigh)]
+		ringingDataSubset = ringingChannelData[range(subsetLimitLow, subsetLimitHigh)] - stats.median(ringingChannelData)
+		inducingChanValues = inducingChannelData - stats.median(inducingChannelData)
+		ringingInducerValue = sum(inducingChanValues[100:1800])
 
 		#compute the fourier components of ringing subset, and add them to an ongoing summation
 		fftOfSubset = fft(ringingDataSubset)
@@ -132,7 +190,7 @@ class analyzeCorrelatedTraces():
 		absFFT = np.absolute(fftOfSubset)
 		fftToAdd = cutFourierScaleInHalf(absFFT)
 		#add the new fft component to the ongoing summation
-		self.arrayFourierSum += fftToAdd
+		self.arrayFourierSum += fftToAdd/ringingInducerValue
 
 		if updatePlots:
 			#plot out summed fft of ringing range
@@ -142,9 +200,9 @@ class analyzeCorrelatedTraces():
 				lineToDel = lineOld.pop(0)
 				del lineToDel
 			#update the plot of the fourier figure
-			self.axisFourier.plot(self.freqAxis[self.xLimFourierLow:self.xLimFourierHigh], self.arrayFourierSum[self.xLimFourierLow:self.xLimFourierHigh])
+			self.axisFourier.plot(self.freqAxisRinging, self.arrayFourierSum/numFilesProcessed)
 			#apply limits
-			self.axisFourier.set_xlim(self.freqAxis[self.xLimFourierLow], self.freqAxis[self.xLimFourierHigh])
+			#self.axisFourier.set_xlim(self.freqAxisRinging[self.xLimFourierLow], self.freqAxisRinging[self.xLimFourierHigh])
 
 			#update calls to draw the plots
 			self.figHandleFourier.canvas.draw()
@@ -238,6 +296,13 @@ class analyzeCorrelatedTraces():
 			dataChanOne = lecroyparser.ScopeData(fileChanOne).y
 			dataChanTwo = lecroyparser.ScopeData(fileChanTwo).y
 
+			if fileArrayIndex == 0:
+				sumChanOne = dataChanOne[0:self.numSamples]
+				sumChanTwo = dataChanTwo[0:self.numSamples]
+			else:
+				sumChanOne += dataChanOne[0:self.numSamples]
+				sumChanTwo += dataChanTwo[0:self.numSamples]
+
 			if (fileArrayIndex % updateEveryXTraces == 0) :
 				updatePlotsFlag = True
 			else:
@@ -248,7 +313,7 @@ class analyzeCorrelatedTraces():
 			self.plotBothChannels(dataChanOne, dataChanTwo, updatePlotsFlag)
 
 			#go into the ringing range and add that fourier component to an ongoign sum
-			self.addNewTraceRinging(dataChanTwo, updatePlotsFlag)
+			self.addNewTraceRinging(dataChanTwo, updatePlotsFlag, dataChanOne, fileArrayIndex)
 
 			#process the current traces to add their hits to the growing histograms
 			self.addToHistograms(dataChanOne, dataChanTwo, updatePlotsFlag)
@@ -257,7 +322,11 @@ class analyzeCorrelatedTraces():
 			fileArrayIndex += 1
 
 			if updatePlotsFlag :
-				# plt.waitforbuttonpress()
+				plt.plot(self.timeAxis, sumChanOne)
+				plt.plot(self.timeAxis, sumChanTwo)
+				plt.xlim([0, 1e-7])
+				plt.draw()
+				#plt.waitforbuttonpress()
 				plt.pause(0.1)
 
 
@@ -271,6 +340,15 @@ appliedVoltageArray = []
 figHandleCompare = plt.figure(figsize=(6,4))
 axisCompare = figHandleCompare.add_axes([0, 0, 1, 1])
 
+
+directory = 'C:/Andrei/ScopeCollect/09_08_2020/correlatedToFs/100V_400V_2200V_2600V'
+timeZero = -310
+appliedVoltage = 100
+directoryArray.append(directory)
+timeZeroArray.append(timeZero)
+appliedVoltageArray.append(appliedVoltage)
+
+
 #select which data set to look through.  
 #for 200V, use ringing analysis range of 1250:1650
 # directory = 'C:/Andrei/ScopeCollect/08_28_2020/correlationMeasurements/200_500_2300_2700'
@@ -281,24 +359,36 @@ axisCompare = figHandleCompare.add_axes([0, 0, 1, 1])
 # appliedVoltageArray.append(appliedVoltage)
 # directory = 'C:/Andrei/ScopeCollect/08_28_2020/correlationMeasurements/200_500_2100_2500'
 # directory = 'C:/Andrei/ScopeCollect/08_28_2020/correlationMeasurements/200_500_1900_2300'
+
 #for 100V, use ringing analysis range of 1800:2200
-# directory = 'C:/Andrei/ScopeCollect/08_28_2020/correlationMeasurements/100_400_2200_2600'
+directory = 'C:/Andrei/ScopeCollect/08_28_2020/correlationMeasurements/100_400_2200_2600'
+timeZero = -400
+appliedVoltage = 100
+directoryArray.append(directory)
+timeZeroArray.append(timeZero)
+appliedVoltageArray.append(appliedVoltage)
+
+# directory = 'C:/Andrei/ScopeCollect/08_28_2020/correlationMeasurements/100_400_2000_2400'
 # timeZero = -400
 # appliedVoltage = 100
 # directoryArray.append(directory)
 # timeZeroArray.append(timeZero)
 # appliedVoltageArray.append(appliedVoltage)
-# directory = 'C:/Andrei/ScopeCollect/08_28_2020/correlationMeasurements/100_400_2000_2400'
 # directory = 'C:/Andrei/ScopeCollect/08_28_2020/correlationMeasurements/100_400_1800_2200'
+# timeZero = -400
+# appliedVoltage = 100
+# directoryArray.append(directory)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
 #for 50V, use ringing analysis range of 2700:3100
 # directory = 'C:/Andrei/ScopeCollect/08_28_2020/correlationMeasurements/50_350_1750_2150'
 # directory = 'C:/Andrei/ScopeCollect/08_28_2020/correlationMeasurements/50_350_1950_2350'
-directory = 'C:/Andrei/ScopeCollect/08_28_2020/correlationMeasurements/50_350_2150_2550'
-timeZero = -400
-appliedVoltage = 50
-directoryArray.append(directory)
-timeZeroArray.append(timeZero)
-appliedVoltageArray.append(appliedVoltage)
+# directory = 'C:/Andrei/ScopeCollect/08_28_2020/correlationMeasurements/50_350_2150_2550'
+# timeZero = -400
+# appliedVoltage = 50
+# directoryArray.append(directory)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
 
 
 #compare correlated traces with replaced lens stack (no meshes)
@@ -310,12 +400,12 @@ appliedVoltageArray.append(appliedVoltage)
 # appliedVoltageArray.append(appliedVoltage)
 #for 70V, try range of 2400:2800
 # directory = 'C:/Andrei/ScopeCollect/09_08_2020/correlatedToFs/70V_370V_2170V_2570V'
-directory = 'C:/Andrei/ScopeCollect/09_08_2020/correlatedToFs/50V_350V_2150V_2550V'
-timeZero = -310
-appliedVoltage = 50
-directoryArray.append(directory)
-timeZeroArray.append(timeZero)
-appliedVoltageArray.append(appliedVoltage)
+# directory = 'C:/Andrei/ScopeCollect/09_08_2020/correlatedToFs/50V_350V_2150V_2550V'
+# timeZero = -310
+# appliedVoltage = 50
+# directoryArray.append(directory)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
 
 
 numFiles = len(directoryArray)
