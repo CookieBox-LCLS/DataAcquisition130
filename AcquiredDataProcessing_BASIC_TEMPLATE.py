@@ -36,15 +36,6 @@ for line in headerFile:
 		#code has found where the trace size is saved in the header, and extracts that value.
 		traceDataSize = int(match.group(1))
 
-# #block of code for debugging
-# segmentNowStart = 0
-# dataFile.seek(segmentNowStart)
-# segmentNow = dataFile.read(traceDataSize)
-# traceNow = np.frombuffer(segmentNow, dtype=dt)
-# plt.plot(traceNow)
-# plt.show()
-# print(segmentNowStart)
-
 #################
 #PROCESS SAVED RAW DATA
 #################

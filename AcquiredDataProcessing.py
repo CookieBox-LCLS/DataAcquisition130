@@ -43,18 +43,104 @@ folderArray = []
 fileArray = []
 timeZeroArray = []
 appliedVoltageArray = []
+legendNamesList = []
 
-# #1300V across MCP
-# folderName = "C:/Andrei/ScopeCollect/tempLookingAt/walkwayToF_70V_NoAmp_unlessNoted/370V_1670V_2070V/"
+
+
+# #1300V across MCP (large pore)
+# folderName = "C:/Andrei/ScopeCollect/08_14_2020/walkwayToF_70V_NoAmp_unlessNoted/370V_1670V_2070V/"
 # dataFileName = "2020_08_14_15_39_05"
+# timeZero = 0
+# appliedVoltage = 70
 # folderArray.append(folderName)
 # fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("1300V across, regular")
 
-# # #1800V across MCP
+
+# #1400 across large pore
+# folderName = "C:/Andrei/ScopeCollect/08_14_2020/walkwayToF_70V_NoAmp_unlessNoted/370V_1770V_2170V/"
+# dataFileName = "2020_08_14_16_20_37"
+# timeZero = 0
+# appliedVoltage = 70
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("1400V across, regular")
+
+# #1400 across MCP (small pore)
+# folderName = "C:/Andrei/ScopeCollect/08_28_2020/short_eToFOnly/70_370_1770_2170/"
+# dataFileName = "2020_08_28_15_05_23"
+# timeZero = 0
+# appliedVoltage = 70
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("1400V across, small pore")
+
+
+# # #1600 across large pore
+# folderName = "C:/Andrei/ScopeCollect/08_14_2020/walkwayToF_70V_NoAmp_unlessNoted/370V_1970V_2370V/"
+# dataFileName = "2020_08_14_17_49_15"
+# timeZero = 0
+# appliedVoltage = 70
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("1600V across, regular")
+
+# #1600 across MCP(small pore)
+# folderName = "C:/Andrei/ScopeCollect/08_28_2020/short_eToFOnly/70_370_1970_2370/"
+# dataFileName = "2020_08_28_15_29_10"
+# timeZero = 0
+# appliedVoltage = 70
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("1600V across, small pore")
+
+
+# #1800 across large pore
+# folderName = "C:/Andrei/ScopeCollect/08_14_2020/walkwayToF_70V_NoAmp_unlessNoted/370V_2170V_2570V/"
+# dataFileName = "2020_08_14_16_48_57"
+# timeZero = 0
+# appliedVoltage = 70
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("1800V across, regular")
+
+# # #1800V across MCP small pore
 # folderName = "C:/Andrei/ScopeCollect/08_28_2020/short_eToFOnly/70_370_2170_2570/"
 # dataFileName = "2020_08_28_15_48_50"
+# timeZero = 0
+# appliedVoltage = 70
 # folderArray.append(folderName)
 # fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("1800V across, small pore")
+
+
+
+# #2000 across large pore
+# folderName = "C:/Andrei/ScopeCollect/08_14_2020/walkwayToF_70V_NoAmp_unlessNoted/370V_2370V_2770V/"
+# dataFileName = "2020_08_14_17_16_10"
+# timeZero = 0
+# appliedVoltage = 70
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("2000V across, regular")
+
+
 
 # folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_50V/BackTubeMCPMesh_50V/350V_2150V_2550V/"
 # dataFileName = "2020_08_27_15_53_24"
@@ -92,6 +178,7 @@ appliedVoltageArray = []
 # fileArray.append(dataFileName)
 # timeZeroArray.append(timeZero)
 # appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("0V retardation")
 
 # ###retardation tests for 200V applied on front, lower voltages on back components
 # folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_200V/BackTubeMCPMesh_150V/450V_2250V_2650V/"
@@ -102,6 +189,7 @@ appliedVoltageArray = []
 # fileArray.append(dataFileName)
 # timeZeroArray.append(timeZero)
 # appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("50V retardation")
 
 
 # folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_200V/BackTubeMCPMesh_100V/400V_2200V_2600V/"
@@ -112,6 +200,7 @@ appliedVoltageArray = []
 # fileArray.append(dataFileName)
 # timeZeroArray.append(timeZero)
 # appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("100V retardation")
 
 
 # folderName = "C:/Andrei/ScopeCollect/08_27_2020/retardationTests/noseFront_200V/BackTubeMCPMesh_50V/350V_2150V_2550V/"
@@ -122,6 +211,8 @@ appliedVoltageArray = []
 # fileArray.append(dataFileName)
 # timeZeroArray.append(timeZero)
 # appliedVoltageArray.append(appliedVoltage)
+
+# legendNamesList.append("150V retardation")
 
 
 
@@ -257,41 +348,65 @@ appliedVoltageArray = []
 # timeZeroArray.append(timeZero)
 # appliedVoltageArray.append(appliedVoltage)
 
-folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_200/backAt_200/"
-dataFileName = "2020_11_18_20_23_32"
-timeZero = 0
-appliedVoltage = 150
-folderArray.append(folderName)
-fileArray.append(dataFileName)
-timeZeroArray.append(timeZero)
-appliedVoltageArray.append(appliedVoltage)
 
-folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_200/backAt_150/"
-dataFileName = "2020_11_18_19_54_49"
-timeZero = 0
-appliedVoltage = 150
-folderArray.append(folderName)
-fileArray.append(dataFileName)
-timeZeroArray.append(timeZero)
-appliedVoltageArray.append(appliedVoltage)
 
-folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_200/backAt_100/"
-dataFileName = "2020_11_18_19_22_48"
-timeZero = 0
-appliedVoltage = 150
-folderArray.append(folderName)
-fileArray.append(dataFileName)
-timeZeroArray.append(timeZero)
-appliedVoltageArray.append(appliedVoltage)
 
-folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_200/backAt_50/"
-dataFileName = "2020_11_18_16_32_35"
+
+
+# folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_200/backAt_200/"
+# dataFileName = "2020_11_18_20_23_32"
+# timeZero = 0
+# appliedVoltage = 150
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("0V retardation")
+
+# folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_200/backAt_150/"
+# dataFileName = "2020_11_18_19_54_49"
+# timeZero = 0
+# appliedVoltage = 150
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("50V retardation")
+
+# folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_200/backAt_100/"
+# dataFileName = "2020_11_18_19_22_48"
+# timeZero = 0
+# appliedVoltage = 150
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("100V retardation")
+
+# folderName = "C:/Andrei/ScopeCollect/11_18_2020/retardationTests/frontAt_200/backAt_50/"
+# dataFileName = "2020_11_18_16_32_35"
+# timeZero = 0
+# appliedVoltage = 150
+# folderArray.append(folderName)
+# fileArray.append(dataFileName)
+# timeZeroArray.append(timeZero)
+# appliedVoltageArray.append(appliedVoltage)
+# legendNamesList.append("150V retardation")
+
+
+
+#high resolution example
+folderName = "C:/Andrei/ScopeCollect/scratch/400V_2000V_2400V/"
+# dataFileName = "2020_08_13_18_54_57"
+# dataFileName = "2020_08_13_20_03_16"
+dataFileName = "2020_08_13_20_43_36"
 timeZero = 0
-appliedVoltage = 150
+appliedVoltage = 100
 folderArray.append(folderName)
 fileArray.append(dataFileName)
 timeZeroArray.append(timeZero)
 appliedVoltageArray.append(appliedVoltage)
+legendNamesList.append("0V retardation")
 
 
 
@@ -340,10 +455,11 @@ appliedVoltageArray.append(appliedVoltage)
 
 
 
-figHandleCountHistogram = plt.figure(figsize=(7,5))
-axesHandleCountHistogram = figHandleCountHistogram.add_axes([0, 0, 1, 1])
-figHandlePeakWidths = plt.figure(figsize=(7,5))
-axesHandlePeakWidths = figHandlePeakWidths.add_axes([0, 0, 1, 1])
+figHandleCountHistogram = plt.figure(figsize=(15,9))
+axesHandleCountHistogram = figHandleCountHistogram.add_axes([0.15, 0.15, 0.8, 0.7])
+figHandlePeakWidths = plt.figure(figsize=(15,9))
+axesHandlePeakWidths = figHandlePeakWidths.add_axes([0.15, 0.15, 0.8, 0.7])
+peakWidthsLegendsList = []
 figHandleRiseTimes = plt.figure(figsize=(7,5))
 axesHandleRiseTimes = figHandleRiseTimes.add_axes([0, 0, 1, 1])
 figHandleFourierSum = plt.figure(figsize=(7,5))
@@ -605,6 +721,26 @@ def keepOnlyFrequencyRange(fft, indexStartRange, indexEndRange):
 	return timeSignal
 
 
+def calculateFWHMOfFoundHit(rawData, indexLow, indexHigh, convolvedMaxIndex):
+	maxVal = rawData[convolvedMaxIndex]
+	lowValLeft = rawData[indexLow]
+	desiredVal = (maxVal + lowValLeft) / 2
+	indexNow = indexLow
+	while lowValLeft < desiredVal:
+		indexNow += 1
+		lowValLeft = rawData[indexNow]
+	indexLeftLast = indexNow
+
+	lowValRight = rawData[indexHigh]
+	desiredVal = (maxVal + lowValRight) / 2
+	indexNow = indexHigh
+	while lowValRight < desiredVal:
+		indexNow -= 1
+		lowValRight = rawData[indexNow]
+
+	spanOfHit = indexNow - indexLeftLast
+	return spanOfHit
+
 #################
 #START OF SCRIPT
 #################
@@ -663,6 +799,14 @@ for i in range(numFiles):
 
 			#perform processing similar to that done on the o-scope
 			rawData, hitIndices, hitLimitsHigh, convPeakMax = CFD(traceNow)
+			normedTrace = normalizeTrace(rawData)
+
+#			plt.figure()
+#			plt.plot(traceNow)
+#			if (hitIndices.size > 0):
+#				plt.scatter(hitIndices, traceNow[hitIndices], s=150)
+#			plt.draw()
+#			plt.pause(0.001)
 
 			totalNumberHits = totalNumberHits + len(hitIndices)
 
@@ -682,7 +826,11 @@ for i in range(numFiles):
 			histogramCollected = addHitsToHistogram(hitIndices, histogramCollected)
 
 			if len(hitIndices) <= 10:
-				peakWidthHistogram = addHitsToHistogram((hitLimitsHigh - hitIndices), peakWidthHistogram)
+				FWHMList = []
+				for l in range(len(hitIndices)):
+					FWHMList.append(calculateFWHMOfFoundHit(normedTrace, hitIndices[l], hitLimitsHigh[l], convPeakMax[l]))
+				peakWidthHistogram = addHitsToHistogram(FWHMList, peakWidthHistogram)
+
 				riseTimeHistogram = addHitsToHistogram((convPeakMax - hitIndices), riseTimeHistogram)
 				#add to fourier spectrum
 				fourierFull = scipy.fft(rawData)
@@ -702,18 +850,45 @@ for i in range(numFiles):
 			pass
 
 
+
+	timeAxis = np.array([k*40 for k in list(range(int(numSamples)))])
+
 	histogramCollected = calculateBinnedHistogramTrace(histogramCollected, binWidth)
-	axesHandleCountHistogram.plot(histogramCollected/np.sum(histogramCollected))
-	axesHandleCountHistogram.set_title("histogram")
-	axesHandleCountHistogram.set_xlim(1000, 4000)
-	axesHandleCountHistogram.set_ylim(0)
+	plt.figure(figHandleCountHistogram.number)
+	lineHandle = plt.plot(timeAxis/1000, histogramCollected/np.sum(histogramCollected), linewidth=1)
+	peakWidthsLegendsList.append(lineHandle)
+	plt.draw()
+	plt.pause(1)
+	#make a zoomed in version for each histogram
+	figHandleTemp = plt.figure(figsize=(9, 6))
+	figHandleTemp.add_axes([0.2, 0.2, 0.7, 0.6])
+	plt.plot(timeAxis/1000, histogramCollected/np.sum(histogramCollected), linewidth=1, color=lineHandle[0].get_color())
+	if i == 0:
+		plt.xlim([64, 74])
+		plt.xticks([64, 74])
+	elif i == 1:
+		plt.xlim([72, 82])
+		plt.xticks([72, 82])
+	elif i == 2:
+		plt.xlim([84, 94])
+		plt.xticks([84, 94])
+	elif i == 3:
+		plt.xlim([108, 118])
+		plt.xticks([108, 118])
+	plt.ylim([0, 0.0005])
+	plt.xticks(fontsize=26)
+	plt.yticks(fontsize=26)
+	plt.yticks([0, 0.0005])
+	plt.title("Zoomed in Histogram", fontsize=36)
+	plt.xlabel("Time of Flight (ns)", fontsize=36)
 	plt.pause(1)
 	plt.draw()
 
-	axesHandlePeakWidths.plot(peakWidthHistogram)
-	axesHandlePeakWidths.set_title("hit peak widths")
-	axesHandlePeakWidths.set_xlim(0, 80)
-	axesHandlePeakWidths.set_ylim(0)
+
+	peakWidthHistogram = peakWidthHistogram/np.sum(peakWidthHistogram)
+	plt.figure(figHandlePeakWidths.number)
+	lineHandle = plt.plot(timeAxis, peakWidthHistogram, linewidth=4)
+	# peakWidthsLegendsList.append(lineHandle)
 	plt.pause(1)
 	plt.draw()
 
@@ -743,7 +918,7 @@ for i in range(numFiles):
 		timeZero = timeZeroArray[i]
 		numSamples = histogramCollected.size
 		#establish time axis
-		timeAxis = [i/Fs for i in list(range(numSamples))]
+		timeAxis = [k/Fs for k in list(range(numSamples))]
 		#load the time parameters needed to calculate the overlap matrix
 		TIMEMIN = min(timeAxis)
 		TIMEMAX = max(timeAxis)
@@ -775,3 +950,45 @@ for i in range(numFiles):
 	#close out files
 	headerFile.close()
 	dataFile.close()
+
+
+
+#make nice plot showing histogram comparison
+plt.figure(figHandleCountHistogram.number)
+plt.title("eToF Histograms for ATI Electrons\nAccelerated to 200V", fontsize=36)
+plt.xlabel("Time of Flight (ns)", fontsize=36)
+plt.ylabel("Signal Strength (normalized)", fontsize=36)
+plt.xticks(fontsize=26)
+plt.yticks(fontsize=26)
+plt.yticks([0, 0.0025])
+legHandle = plt.legend(tuple([i[0] for i in peakWidthsLegendsList]), tuple(legendNamesList), fontsize=20)
+[i.set_linewidth(4) for i in legHandle.get_lines()]
+plt.xlim([60, 150])
+plt.ylim([0, 0.0025])
+plt.pause(1)
+plt.draw()
+
+plt.figure(figsize=(15,9))
+plt.plot(timeAxis/1000, histogramCollected/np.sum(histogramCollected), linewidth=1)
+plt.xlim([60, 150])
+plt.ylim([0, 0.005])
+plt.draw()
+
+
+
+#may be nice to also plot ylim[0, 0.0005].  1 - xlim[64, 74]  2 - xlim[72, 82]  3 - xlim[84, 94] 4 - xlim[108,118]
+
+
+#make nice plot of FWHM duration
+# plt.figure(figHandlePeakWidths.number)
+# plt.title("Waveform Hit Temporal Duration (FWHM)", fontsize=36)
+# plt.xlabel("Duration (ps)", fontsize=36)
+# plt.ylabel("Signal Distribution Histogram \n(normalized)", fontsize=36)
+# plt.xticks(fontsize=26)
+# plt.yticks(fontsize=26)
+# plt.yticks([])
+# plt.legend(tuple([i[0] for i in peakWidthsLegendsList]), tuple(legendNamesList), fontsize=20)
+# plt.xlim([0, 1500])
+# plt.ylim([0, 0.3])
+# plt.pause(1)
+# plt.draw()
